@@ -1,0 +1,20 @@
+[package]
+name = "wordchipper-download-cache"
+version.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+
+[lints]
+workspace = true
+
+
+[dependencies]
+anyhow = { workspace = true }
+directories-next = { workspace = true }
+
+
+[dev-dependencies]
+serial_test = { workspace = true }
