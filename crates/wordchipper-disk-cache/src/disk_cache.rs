@@ -1,9 +1,9 @@
 //! # Wordchipper Disk Cache
 
-use std::fs;
 use crate::{WORDCHIPPER_CACHE_CONFIG, path_utils};
 use anyhow::Context;
 use downloader::{Download, Downloader};
+use std::fs;
 use std::path::{Path, PathBuf};
 
 /// Options for [`WordchipperDiskCache`].
