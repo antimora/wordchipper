@@ -18,8 +18,10 @@
 //! #### feature: ``default``
 //!
 //! * ``client``
+//! * ``download``
 //!
-//! The default feature enables "client", with no training code.
+//!
+//! The default feature does not enable "training".
 //!
 //! #### feature: ``client``
 //!
@@ -29,6 +31,13 @@
 //!
 //! The default client is focused on loading vocabularies and running
 //! high performance encoders / decoders.
+//!
+//! #### feature: ``download``
+//!
+//! * ``wordchipper-disk-cache``
+//! * ``std``
+//!
+//! The download feature enables downloading vocabularies from the internet.
 //!
 //! #### feature: ``training``
 //!
