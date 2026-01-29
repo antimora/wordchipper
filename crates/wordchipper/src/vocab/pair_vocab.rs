@@ -168,6 +168,7 @@ mod tests {
         vocab.pairs.insert((300, 301), 302);
 
         assert_eq!(vocab.max_token(), 302);
+        assert_eq!(vocab.len(), 256 + 3);
 
         assert_eq!(
             &vocab.sorted_tokens(),

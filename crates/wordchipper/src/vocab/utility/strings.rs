@@ -17,3 +17,19 @@ pub fn string_from_lossy_utf8(v: Vec<u8>) -> String {
         unsafe { String::from_utf8_unchecked(v) }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_string_from_lossy_utf8() {
+        let v = vec![0x61, 0x62, 0xff, 0x28];
+        let s = string_from_lossy_utf8(v);
+        assert_eq!(s, "ab�(".to_string());
+
+        let v = vec![0x61, 0x62];
+        let s = string_from_lossy_utf8(v);
+        assert_eq!(s, "ab".to_string());
+    }
+}
