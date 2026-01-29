@@ -70,8 +70,8 @@ impl ConstRegexWrapperPattern {
     ///
     /// ## Returns
     /// A new `RegexWrapperPattern` instance.
-    pub fn to_pattern(self) -> RegexWrapperPattern {
-        self.into()
+    pub fn to_pattern(&self) -> RegexWrapperPattern {
+        self.clone().into()
     }
 
     /// Compile the regex pattern into a `RegexWrapper`.
@@ -266,5 +266,56 @@ impl<'r, 'h> Iterator for MatchesWrapper<'r, 'h> {
                 .next()
                 .map(|m| unsafe { core::mem::transmute(m.unwrap()) }),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_const_pattern() {
+        const CONST_PATTERN: ConstRegexWrapperPattern = ConstRegexWrapperPattern::Basic("hello world");
+        assert_eq!(CONST_PATTERN.as_str(), "hello world");
+
+        let rw = CONST_PATTERN.compile().unwrap();
+        assert_eq!(rw.as_str(), "hello world");
+        assert!(rw.is_basic());
+
+        let pattern = CONST_PATTERN.to_pattern();
+        assert_eq!(pattern.as_str(), "hello world");
+    }
+
+    #[test]
+    fn test_basic_pattern() {
+        let pattern = RegexWrapperPattern::Basic("hello world".to_string());
+        assert_eq!(pattern.as_str(), "hello world");
+
+        let rw = pattern.compile().unwrap();
+        assert_eq!(rw.as_str(), "hello world");
+        assert!(rw.is_basic());
+        assert!(!rw.is_fancy());
+    }
+
+    #[test]
+    fn test_fancy_pattern() {
+        let pattern = RegexWrapperPattern::Fancy("hello world".to_string());
+        assert_eq!(pattern.as_str(), "hello world");
+
+        let rw = pattern.compile().unwrap();
+        assert_eq!(rw.as_str(), "hello world");
+        assert!(!rw.is_basic());
+        assert!(rw.is_fancy());
+    }
+
+    #[test]
+    fn test_adaptive_pattern() {
+        let pattern: RegexWrapperPattern = "hello world".to_string().into();
+        assert_eq!(pattern.as_str(), "hello world");
+
+        let rw = pattern.compile().unwrap();
+        assert_eq!(rw.as_str(), "hello world");
+        assert!(rw.is_basic());
+        assert!(!rw.is_fancy());
     }
 }
