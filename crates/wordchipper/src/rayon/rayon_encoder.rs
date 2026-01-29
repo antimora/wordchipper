@@ -75,57 +75,31 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::decoders::{DictionaryDecoder, TokenDecoder};
+    use crate::alloc::sync::Arc;
+    use crate::encoders::test_utils::{common_encoder_test_vocab, common_encoder_tests};
     use crate::encoders::{DefaultTokenEncoder, TokenEncoder};
     use crate::rayon::rayon_encoder::ParallelRayonEncoder;
-    use crate::segmentation::SegmentationConfig;
-    use crate::types::{check_is_send, check_is_sync};
-    use crate::vocab::UnifiedTokenVocab;
-    use crate::vocab::byte_vocab::ByteMapVocab;
-    use crate::vocab::public::openai::patterns::OA_GPT3_CL100K_WORD_PATTERN;
-    use crate::vocab::utility::testing::build_test_vocab;
-    use std::sync::Arc;
+    use crate::types::TokenType;
+
+    fn test_encoder<T: TokenType>() {
+        let vocab = common_encoder_test_vocab();
+
+        let encoder = DefaultTokenEncoder::<T>::init(vocab.clone().into());
+        let encoder = ParallelRayonEncoder::new(encoder);
+
+        assert!(Arc::ptr_eq(encoder.segmentor(), encoder.inner.segmentor()));
+        assert_eq!(encoder.special_vocab(), encoder.inner.special_vocab());
+
+        common_encoder_tests(vocab, &encoder)
+    }
 
     #[test]
-    fn test_encoder() {
-        type T = u16;
+    fn test_encoder_u16() {
+        test_encoder::<u16>();
+    }
 
-        let samples = vec![
-            "hello world",
-            "hello san francisco",
-            "it's not the heat, it's the salt",
-        ];
-
-        let byte_vocab: Arc<ByteMapVocab<T>> = Arc::new(Default::default());
-        let segmentation = SegmentationConfig::from_pattern(OA_GPT3_CL100K_WORD_PATTERN);
-        let vocab: Arc<UnifiedTokenVocab<T>> = build_test_vocab(byte_vocab.clone(), segmentation)
-            .with_special_words(vec![("<|HI|>", 3000)])
-            .into();
-
-        let special_sample = "hello <|HI|> world";
-
-        let encoder = DefaultTokenEncoder::<T>::init(vocab.clone());
-        check_is_send(&encoder);
-        check_is_sync(&encoder);
-
-        let encoder = ParallelRayonEncoder::new(encoder);
-        check_is_send(&encoder);
-        check_is_sync(&encoder);
-
-        let decoder = DictionaryDecoder::from_unified_vocab(vocab);
-        check_is_send(&decoder);
-        check_is_sync(&decoder);
-
-        // Special handling.
-        let tokens = encoder.try_encode(special_sample).unwrap();
-        assert_eq!(
-            decoder.try_decode_to_string(tokens).unwrap(),
-            special_sample
-        );
-
-        for sample in samples {
-            let tokens = encoder.try_encode(sample).unwrap();
-            assert_eq!(decoder.try_decode_to_string(tokens).unwrap(), sample);
-        }
+    #[test]
+    fn test_encoder_u32() {
+        test_encoder::<u32>();
     }
 }

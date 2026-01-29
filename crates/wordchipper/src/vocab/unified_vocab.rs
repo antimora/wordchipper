@@ -7,6 +7,7 @@ use crate::types::{CommonHashMap, CommonHashSet, Pair, SpanTokenMap, TokenType};
 use crate::vocab::ByteMapVocab;
 use crate::vocab::pair_vocab::PairMapVocab;
 use crate::vocab::span_vocab::SpanMapVocab;
+use crate::vocab::special_vocab::SpecialVocab;
 use crate::vocab::token_vocab::TokenVocab;
 
 /// Unified token vocabulary.
@@ -105,25 +106,17 @@ impl<T: TokenType> UnifiedTokenVocab<T> {
         self.span_vocab.byte_vocab()
     }
 
-    /// Extend the vocabulary with the given special words.
-    ///
-    /// ## Arguments
-    /// * `special_words` - An iterator of word strings and tokens.
+    /// Get a reference to the [`SpecialVocab`]
+    pub fn special_vocab(&self) -> &SpecialVocab<T> {
+        self.segmentation.special_vocab()
+    }
+
+    /// Get a mutable view of the [`SpecialVocab`]
     ///
     /// ## Returns
-    /// The updated `UnifiedTokenVocab` instance.
-    pub fn with_special_words<W, S>(
-        self,
-        special_words: W,
-    ) -> Self
-    where
-        W: IntoIterator<Item = (S, T)>,
-        S: AsRef<str>,
-    {
-        Self {
-            segmentation: self.segmentation.with_special_words(special_words),
-            ..self
-        }
+    /// A mutable reference to the internal `SpecialVocab`.
+    pub fn special_vocab_mut(&mut self) -> &mut SpecialVocab<T> {
+        self.segmentation.special_vocab_mut()
     }
 
     /// Compiled expansion dictionary.
