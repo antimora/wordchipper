@@ -31,6 +31,9 @@ pub mod merge_heap_encoder;
 pub mod merge_scan_encoder;
 pub mod token_encoder;
 
+#[cfg(test)]
+pub mod test_utils;
+
 #[doc(inline)]
 pub use token_encoder::TokenEncoder;
 
