@@ -50,20 +50,20 @@ where
         self.inner.special_vocab()
     }
 
-    fn encode_append_span_normal(
+    fn try_encode_append(
         &self,
-        span: &[u8],
+        text: &str,
         tokens: &mut Vec<T>,
-    ) {
-        self.inner.encode_append_span_normal(span, tokens)
+    ) -> anyhow::Result<()> {
+        self.inner.try_encode_append(text, tokens)
     }
 
-    fn encode_batch(
+    fn try_encode_batch(
         &self,
         batch: &[String],
-    ) -> Vec<Vec<T>> {
+    ) -> anyhow::Result<Vec<Vec<T>>> {
         use rayon::prelude::*;
-        batch.par_iter().map(|text| self.encode(text)).collect()
+        batch.par_iter().map(|text| self.try_encode(text)).collect()
     }
 }
 
@@ -111,14 +111,14 @@ mod tests {
         check_is_sync(&decoder);
 
         // Special handling.
-        let tokens = encoder.encode(special_sample);
+        let tokens = encoder.try_encode(special_sample).unwrap();
         assert_eq!(
             decoder.try_decode_to_string(tokens).unwrap(),
             special_sample
         );
 
         for sample in samples {
-            let tokens = encoder.encode(sample);
+            let tokens = encoder.try_encode(sample).unwrap();
             assert_eq!(decoder.try_decode_to_string(tokens).unwrap(), sample);
         }
     }

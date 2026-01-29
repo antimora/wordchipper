@@ -126,7 +126,7 @@ mod tests {
         assert_eq!(decoder.byte_vocab(), &byte_vocab);
 
         for sample in samples {
-            let tokens = encoder.encode(sample);
+            let tokens = encoder.try_encode(sample).unwrap();
             let decoded = decoder.try_decode_to_string(&tokens).unwrap();
             assert_eq!(decoded, sample);
         }
