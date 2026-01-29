@@ -275,7 +275,8 @@ mod tests {
 
     #[test]
     fn test_const_pattern() {
-        const CONST_PATTERN: ConstRegexWrapperPattern = ConstRegexWrapperPattern::Basic("hello world");
+        const CONST_PATTERN: ConstRegexWrapperPattern =
+            ConstRegexWrapperPattern::Basic("hello world");
         assert_eq!(CONST_PATTERN.as_str(), "hello world");
 
         let rw = CONST_PATTERN.compile().unwrap();
