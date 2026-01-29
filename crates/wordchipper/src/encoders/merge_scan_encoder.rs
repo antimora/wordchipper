@@ -4,6 +4,7 @@ use crate::alloc::sync::Arc;
 use crate::alloc::vec::Vec;
 use crate::encoders::token_encoder::TokenEncoder;
 use crate::regex::{RegexSupplierHandle, RegexWrapperHandle, default_regex_supplier};
+use crate::segmentation::SpanRef;
 use crate::segmentation::text_segmentor::TextSegmentor;
 use crate::types::TokenType;
 use crate::vocab::special_vocab::SpecialVocab;
@@ -77,17 +78,12 @@ impl<T: TokenType> MergeScanVocabEncoder<T> {
     ) {
         self.data.byte_vocab().append_tokens(span, tokens);
     }
-}
 
-impl<T: TokenType> TokenEncoder<T> for MergeScanVocabEncoder<T> {
-    fn segmentor(&self) -> &Arc<TextSegmentor> {
-        &self.segmentor
-    }
-
-    fn special_vocab(&self) -> &SpecialVocab<T> {
-        self.data.segmentation.special_vocab()
-    }
-
+    /// Encode a span appending to a target buffer.
+    ///
+    /// ## Arguments
+    /// * `span` - The byte span to encode.
+    /// * `tokens` - The target token buffer to append to.
     fn encode_append_span_normal(
         &self,
         span: &[u8],
@@ -127,6 +123,42 @@ impl<T: TokenType> TokenEncoder<T> for MergeScanVocabEncoder<T> {
                 break;
             }
         }
+    }
+}
+
+impl<T: TokenType> TokenEncoder<T> for MergeScanVocabEncoder<T> {
+    fn segmentor(&self) -> &Arc<TextSegmentor> {
+        &self.segmentor
+    }
+
+    fn special_vocab(&self) -> &SpecialVocab<T> {
+        self.data.segmentation.special_vocab()
+    }
+
+    /// Encode bytes into tokens.
+    ///
+    /// ## Arguments
+    /// * `text` - The string slice to encode.
+    /// * `tokens` - The target token buffer to append to.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip(self, text)))]
+    fn try_encode_append(
+        &self,
+        text: &str,
+        tokens: &mut Vec<T>,
+    ) -> anyhow::Result<()> {
+        self.segmentor()
+            .split_spans(text)
+            .into_iter()
+            .for_each(|span_ref| match span_ref {
+                SpanRef::Normal(span_str) => {
+                    self.encode_append_span_normal(span_str.as_bytes(), tokens)
+                }
+                SpanRef::Special(s) => {
+                    tokens.push(self.special_vocab().lookup_token(s.as_bytes()).unwrap());
+                }
+            });
+
+        Ok(())
     }
 }
 
@@ -172,14 +204,14 @@ mod tests {
         check_is_sync(&decoder);
 
         // Special handling.
-        let tokens = encoder.encode(special_sample);
+        let tokens = encoder.try_encode(special_sample).unwrap();
         assert_eq!(
             decoder.try_decode_to_string(tokens).unwrap(),
             special_sample
         );
 
         for sample in samples {
-            let tokens = encoder.encode(sample);
+            let tokens = encoder.try_encode(sample).unwrap();
             assert_eq!(decoder.try_decode_to_string(tokens).unwrap(), sample);
         }
     }
