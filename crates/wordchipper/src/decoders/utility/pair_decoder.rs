@@ -115,11 +115,15 @@ mod tests {
         )
         .into();
 
+        assert_eq!(vocab.pair_vocab.byte_vocab(), &byte_vocab);
+
         let encoder = MergeHeapVocabEncoder::<T>::init(vocab.clone());
 
         let decoder = PairExpansionDecoder::from_pair_vocab(&vocab.pair_vocab);
         check_is_send(&decoder);
         check_is_sync(&decoder);
+
+        assert_eq!(decoder.byte_vocab(), &byte_vocab);
 
         for sample in samples {
             let tokens = encoder.encode(sample);

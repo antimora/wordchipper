@@ -6,7 +6,7 @@ pub const U8_SIZE: usize = u8::MAX as usize + 1;
 
 /// Validates and returns the vocabulary size, ensuring it's at least the size of the u8 space.
 pub fn try_vocab_size<T: TokenType>(vocab_size: usize) -> anyhow::Result<usize> {
-    if T::from_usize(vocab_size).is_none() {
+    if T::from_usize(vocab_size - 1).is_none() {
         Err(anyhow::anyhow!(
             "vocab_size ({}) doesn't fit in TokenType: {}",
             vocab_size,
@@ -24,4 +24,27 @@ pub fn try_vocab_size<T: TokenType>(vocab_size: usize) -> anyhow::Result<usize> 
 /// Validates and returns the vocab size, panicking if it's too small.
 pub fn expect_vocab_size<T: TokenType>(vocab_size: usize) -> usize {
     try_vocab_size::<T>(vocab_size).unwrap()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_vocab_size() {
+        assert_eq!(expect_vocab_size::<u16>(256), 256);
+        assert_eq!(
+            expect_vocab_size::<u16>(u16::MAX as usize),
+            u16::MAX as usize
+        );
+
+        assert_eq!(
+            expect_vocab_size::<u16>(u16::MAX as usize + 1),
+            u16::MAX as usize + 1
+        );
+        assert!(try_vocab_size::<u16>(u16::MAX as usize + 2).is_err());
+
+        assert_eq!(expect_vocab_size::<u8>(256), 256);
+        assert!(try_vocab_size::<u8>(257).is_err());
+    }
 }

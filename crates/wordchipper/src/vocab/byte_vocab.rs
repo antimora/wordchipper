@@ -80,7 +80,7 @@ impl<T: TokenType> ByteMapVocab<T> {
     /// A new `ByteMapVocab` instance.
     ///
     /// ## Panics
-    /// If there the map is not a 1:1 bijection.
+    /// If the map is not a 1:1 bijection.
     pub fn from_token_to_byte(token_to_byte: &CommonHashMap<T, u8>) -> Self {
         let token_to_byte = token_to_byte.clone();
 
@@ -186,6 +186,7 @@ impl<T: TokenType> TokenVocab<T> for ByteMapVocab<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::alloc::format;
     use num_traits::FromPrimitive;
 
     #[test]
@@ -193,13 +194,28 @@ mod tests {
         type T = u32;
         let table: ByteMapVocab<T> = ByteMapVocab::default();
 
+        assert_eq!(table.len(), 256);
+
+        assert_eq!(
+            format!("{:?}", table),
+            format!(
+                "ByteTable {{ max_token: 255, tokens: {:?} }}",
+                table.token_to_byte
+            )
+        );
+
         for idx in 0..256 {
             let byte = idx as u8;
             let token = idx as u32;
 
             assert_eq!(table.get_token(byte), token);
+            assert_eq!(table.byte_to_token()[idx], token);
             assert_eq!(table.get_byte(token), Some(byte));
+            assert_eq!(table.token_to_byte()[&token], byte);
         }
+
+        let rebuild = ByteMapVocab::from_token_to_byte(&table.token_to_byte());
+        assert_eq!(rebuild, table);
     }
 
     #[test]
