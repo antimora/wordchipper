@@ -161,7 +161,7 @@ use std::sync::Arc;
 
 fn example<T: TokenType>(
     vocab: Arc<UnifiedTokenVocab<T>>,
-    batch: &[String],
+    batch: &[&str],
 ) -> Vec<Vec<T>> {
     let encoder: DefaultTokenEncoder<T> = DefaultTokenEncoder::init(vocab);
 
