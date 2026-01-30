@@ -123,7 +123,8 @@ fn run_load(args: &Args) -> anyhow::Result<()> {
     println!();
     println!("Timing Encode:");
     let mut token_batches: Vec<Vec<Vec<T>>> = Vec::with_capacity(sample_batches.len());
-    let mut total_token_count = 0;
+    let mut total_wc_token_count = 0;
+    let mut total_tt_token_count = 0;
 
     let mut wc_batch_times_ns = vec![];
     let mut tt_batch_times_ns = vec![];
@@ -131,18 +132,19 @@ fn run_load(args: &Args) -> anyhow::Result<()> {
         let batch = batch.iter().map(|s| s.as_str()).collect::<Vec<_>>();
 
         let t0 = std::time::Instant::now();
-        let token_batch: Vec<Vec<T>> = wc_tokenizer.encoder.try_encode_batch(&batch).unwrap();
+        let wc_encode_batch: Vec<Vec<T>> = wc_tokenizer.encoder.try_encode_batch(&batch).unwrap();
         let t1 = std::time::Instant::now();
         let delay = t1.duration_since(t0);
         wc_batch_times_ns.push(delay.as_nanos() as u64);
 
-        total_token_count += token_batch.iter().map(|tokens| tokens.len()).sum::<usize>();
+        total_wc_token_count += wc_encode_batch.iter().map(|tokens| tokens.len()).sum::<usize>();
 
         let t0 = std::time::Instant::now();
 
         {
             use rayon::prelude::*;
-            let tt_token_batch = batch
+
+            let tt_encode_batch = batch
                 .par_iter()
                 .map(|s| tt_bpe.encode_with_special_tokens(s))
                 .collect::<Vec<_>>();
@@ -150,9 +152,11 @@ fn run_load(args: &Args) -> anyhow::Result<()> {
 
             let delay = t1.duration_since(t0);
             tt_batch_times_ns.push(delay.as_nanos() as u64);
+
+            total_tt_token_count += tt_encode_batch.iter().map(|tokens| tokens.len()).sum::<usize>();
         }
 
-        token_batches.push(token_batch);
+        token_batches.push(wc_encode_batch);
     }
 
     let avg_batch_time_ns = wc_batch_times_ns.iter().sum::<u64>() / num_batches as u64;
@@ -190,10 +194,15 @@ fn run_load(args: &Args) -> anyhow::Result<()> {
     println!();
     println!("Observed Bytes/Token Stats:");
     println!("- total bytes: {}", total_sample_bytes);
-    println!("- total tokens: {}", total_token_count);
+    println!("- total wordchipper tokens: {}", total_wc_token_count);
+    println!("- total tiktoken-rs tokens: {}", total_tt_token_count);
     println!(
-        "- sample byte/token: {:.2}",
-        total_sample_bytes as f64 / total_token_count as f64
+        "- wordchipper byte/token: {:.2}",
+        total_sample_bytes as f64 / total_wc_token_count as f64
+    );
+    println!(
+        "- tiktoken-rs byte/token: {:.2}",
+        total_sample_bytes as f64 / total_tt_token_count as f64
     );
 
     println!();
@@ -208,7 +217,7 @@ fn run_load(args: &Args) -> anyhow::Result<()> {
     for (idx, sample) in sample_batches.iter().enumerate() {
         let batch = &token_batches[idx];
         let t0 = std::time::Instant::now();
-        let decoded_sample = wc_tokenizer
+        let wc_decoded = wc_tokenizer
             .decoder
             .try_decode_batch_to_strings(batch)
             .unwrap();
@@ -221,7 +230,7 @@ fn run_load(args: &Args) -> anyhow::Result<()> {
             .map(|s| String::from_utf8_lossy(segmentor.rewrite(s).as_bytes()).to_string())
             .collect::<Vec<_>>();
 
-        for (s, d) in expected.iter().zip(decoded_sample.iter()) {
+        for (s, d) in expected.iter().zip(wc_decoded.iter()) {
             if s != d {
                 let diff = TextDiff::from_lines(s, d);
 
@@ -241,13 +250,29 @@ fn run_load(args: &Args) -> anyhow::Result<()> {
             use rayon::prelude::*;
 
             let t0 = std::time::Instant::now();
-            let tt_token_batch = batch
+            let tt_decoded = batch
                 .par_iter()
-                .map(|tokens| tt_bpe.decode(tokens.clone()))
+                .map(|tokens| tt_bpe.decode(tokens.clone()).unwrap())
                 .collect::<Vec<_>>();
             let t1 = std::time::Instant::now();
             let delay = t1.duration_since(t0);
             tt_batch_times_ns.push(delay.as_nanos() as u64);
+
+            for (s, d) in expected.iter().zip(tt_decoded.iter()) {
+                if s != d {
+                    let diff = TextDiff::from_lines(s, d);
+
+                    for change in diff.iter_all_changes() {
+                        let sign = match change.tag() {
+                            ChangeTag::Delete => "-",
+                            ChangeTag::Insert => "+",
+                            ChangeTag::Equal => " ",
+                        };
+                        print!("{}{}", sign, change);
+                    }
+                    panic!("MISMATCH");
+                }
+            }
         }
     }
 
