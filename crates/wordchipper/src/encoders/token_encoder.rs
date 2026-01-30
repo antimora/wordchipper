@@ -7,6 +7,9 @@ use crate::types::TokenType;
 use crate::vocab::size_hints::EXPECTED_BYTES_PER_TOKEN;
 use crate::vocab::special_vocab::SpecialVocab;
 
+/// A handle to a token encoder.
+pub type TokenEncoderHandle<T> = Arc<dyn TokenEncoder<T>>;
+
 /// A trait for token encoders.
 pub trait TokenEncoder<T: TokenType>: Send + Sync {
     /// Return the attached text segmentor.
@@ -39,11 +42,10 @@ pub trait TokenEncoder<T: TokenType>: Send + Sync {
     ///
     /// ## Returns
     /// A `Result` containing the vector of tokens or an error.
-    fn try_encode<S: AsRef<str>>(
+    fn try_encode(
         &self,
-        text: S,
+        text: &str,
     ) -> anyhow::Result<Vec<T>> {
-        let text = text.as_ref();
         let capacity = text.len() as f64 / (EXPECTED_BYTES_PER_TOKEN * 0.5);
         let mut tokens = Vec::with_capacity(capacity as usize);
 
@@ -58,9 +60,9 @@ pub trait TokenEncoder<T: TokenType>: Send + Sync {
     ///
     /// ## Returns
     /// A `Result` containing the vector of token vectors or an error.
-    fn try_encode_batch<S: AsRef<str>>(
+    fn try_encode_batch(
         &self,
-        batch: &[S],
+        batch: &[&str],
     ) -> anyhow::Result<Vec<Vec<T>>> {
         batch.iter().map(|s| self.try_encode(s)).collect()
     }
