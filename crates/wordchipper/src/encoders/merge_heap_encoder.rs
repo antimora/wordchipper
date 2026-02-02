@@ -70,7 +70,7 @@ impl<T: TokenType> MergeHeapVocabEncoder<T> {
         self.data.byte_vocab().append_tokens(span, tokens);
 
         let get_pair_rank = {
-            |tok: &mut [T], i: usize| {
+            |tok: &[T], i: usize| {
                 let pair = &(tok[start + i], tok[start + i + 1]);
                 self.data
                     .lookup_pair(pair)
@@ -82,20 +82,16 @@ impl<T: TokenType> MergeHeapVocabEncoder<T> {
         // - pair_ranks[i] = pairs.get(&(CURRENT[i], CURRENT[i + 1]))
         // - pair_ranks.len() = CURRENT.len() - 1 = end - start - 1
         pair_ranks.clear();
-        pair_ranks.extend(
-            (0..(tokens.len() - start - 1))
-                .into_iter()
-                .map(|i| get_pair_rank(tokens, i)),
-        );
+        pair_ranks.extend((0..(tokens.len() - start - 1)).map(|i| get_pair_rank(tokens, i)));
 
-        while let Some((t, i)) = pair_ranks
+        while let Some((new_token, i)) = pair_ranks
             .iter()
             .enumerate()
-            .filter_map(|(i, &t)| {
-                if t == T::max_value() {
+            .filter_map(|(i, &new_token)| {
+                if new_token == T::max_value() {
                     None
                 } else {
-                    Some((t, i))
+                    Some((new_token, i))
                 }
             })
             .min()
@@ -107,7 +103,7 @@ impl<T: TokenType> MergeHeapVocabEncoder<T> {
             // We need to merge CURRENT[i..=i+1] and PAIR_RANKS[i..=i+1]
 
             // Set CURRENT[i] to the new target rank.
-            tokens[start + i] = t;
+            tokens[start + i] = new_token;
 
             if i > 0 {
                 // If there is a preceding token, recompute PAIR_RANKS[i-1].
@@ -147,8 +143,7 @@ impl<T: TokenType> TokenEncoder<T> for MergeHeapVocabEncoder<T> {
         text: &str,
         tokens: &mut Vec<T>,
     ) -> anyhow::Result<()> {
-        let mut pairs = vec![];
-
+        let mut pair_vec = Vec::with_capacity(16);
         self.segmentor()
             .split_spans(text)
             .into_iter()
@@ -161,7 +156,10 @@ impl<T: TokenType> TokenEncoder<T> for MergeHeapVocabEncoder<T> {
                         // 2. Correct-or: Some words may not exist in the pair mappings.
                         tokens.push(token);
                     } else {
-                        self.encode_append_word(span, tokens, &mut pairs);
+                        if pair_vec.len() < span.len() - 1 {
+                            pair_vec.resize(span.len() - 1, T::max_value());
+                        }
+                        self.encode_append_word(span, tokens, &mut pair_vec);
                     }
                 }
                 SpanRef::Special(range) => {
