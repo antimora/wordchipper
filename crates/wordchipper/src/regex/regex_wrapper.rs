@@ -1,6 +1,7 @@
 //! # Regex Wrapper
 //! This modules provides mechanisms to mix `regex` and `fancy_regex` types.
 
+use crate::alloc::boxed::Box;
 use crate::alloc::string::String;
 use crate::alloc::string::ToString;
 use crate::alloc::sync::Arc;
@@ -11,21 +12,21 @@ use core::fmt::Debug;
 #[derive(Clone, Debug)]
 pub enum ErrorWrapper {
     /// Error from `regex`.
-    Basic(regex::Error),
+    Basic(Box<regex::Error>),
 
     /// Error from `fancy_regex`.
-    Fancy(fancy_regex::Error),
+    Fancy(Box<fancy_regex::Error>),
 }
 
 impl From<regex::Error> for ErrorWrapper {
     fn from(err: regex::Error) -> Self {
-        Self::Basic(err)
+        Self::Basic(err.into())
     }
 }
 
 impl From<fancy_regex::Error> for ErrorWrapper {
     fn from(err: fancy_regex::Error) -> Self {
-        Self::Fancy(err)
+        Self::Fancy(err.into())
     }
 }
 
@@ -114,6 +115,12 @@ impl<S: AsRef<str>> From<S> for RegexWrapperPattern {
     }
 }
 
+impl From<RegexWrapperPattern> for RegexWrapper {
+    fn from(pattern: RegexWrapperPattern) -> Self {
+        pattern.compile().unwrap()
+    }
+}
+
 impl RegexWrapperPattern {
     /// Get the underlying regex pattern.
     ///
@@ -157,7 +164,7 @@ pub type RegexWrapperHandle = Arc<RegexWrapper>;
 
 impl From<RegexWrapperPattern> for RegexWrapperHandle {
     fn from(val: RegexWrapperPattern) -> Self {
-        Arc::new(val.compile().unwrap())
+        Arc::new(val.into())
     }
 }
 

@@ -1,14 +1,13 @@
 //! # Encoder for [`UnifiedTokenVocab`].
 
-use crate::alloc::sync::Arc;
 use crate::alloc::vec::Vec;
 use crate::encoders::token_encoder::TokenEncoder;
-use crate::regex::{RegexSupplierHandle, RegexWrapperHandle, default_regex_supplier};
 use crate::segmentation::SpanRef;
 use crate::segmentation::text_segmentor::TextSegmentor;
 use crate::types::TokenType;
 use crate::vocab::special_vocab::SpecialVocab;
 use crate::vocab::unified_vocab::UnifiedTokenVocab;
+use core::num::NonZeroUsize;
 
 /// A Span-lookup / ``(T, T) -> T`` merge heap [`TokenEncoder`].
 ///
@@ -19,10 +18,10 @@ use crate::vocab::unified_vocab::UnifiedTokenVocab;
 #[derive(Clone)]
 pub struct MergeHeapVocabEncoder<T: TokenType> {
     /// Data for the encoders.
-    pub data: Arc<UnifiedTokenVocab<T>>,
+    data: UnifiedTokenVocab<T>,
 
     /// Text Segmentor.
-    pub segmentor: Arc<TextSegmentor>,
+    segmentor: TextSegmentor,
 }
 
 impl<T: TokenType> MergeHeapVocabEncoder<T> {
@@ -33,104 +32,66 @@ impl<T: TokenType> MergeHeapVocabEncoder<T> {
     ///
     /// ## Returns
     /// A new `MergeHeapVocabEncoder` instance.
-    pub fn init(data: Arc<UnifiedTokenVocab<T>>) -> Self {
-        Self::init_with_factory(data, default_regex_supplier)
-    }
-
-    /// Construct an encoder from data.
-    ///
-    /// ## Arguments
-    /// * `data` - The unified token vocabulary to build the encoder from.
-    /// * `re_factory` - A factory function to create regex suppliers.
-    ///
-    /// ## Returns
-    /// A new `MergeHeapVocabEncoder` instance.
-    pub fn init_with_factory<F>(
-        data: Arc<UnifiedTokenVocab<T>>,
-        re_factory: F,
-    ) -> Self
-    where
-        F: Fn(RegexWrapperHandle) -> RegexSupplierHandle,
-    {
-        let segmentor = TextSegmentor::from_config(data.segmentation.clone(), re_factory).into();
+    pub fn init(
+        data: UnifiedTokenVocab<T>,
+        max_pool: Option<NonZeroUsize>,
+    ) -> Self {
+        let segmentor = TextSegmentor::from_config(data.segmentation.clone(), max_pool);
 
         Self { data, segmentor }
     }
 
-    /// Compiler Hint.
-    fn lookup_normal_token(
-        &self,
-        span: &[u8],
-    ) -> Option<T> {
-        self.data.lookup_token(span)
-    }
-
-    /// Compiler Hint.
-    fn lookup_pair(
-        &self,
-        pair: &(T, T),
-    ) -> Option<&T> {
-        self.data.lookup_pair(pair)
-    }
-
-    /// Compiler Hint.
-    fn append_tokens(
+    /// Encodes a single normal "word".
+    ///
+    /// Maintains a heap of the best possible merges from the pair vocab,
+    /// iterates until no more merges remain.
+    ///
+    /// - Assumes that the full span has already failed a span map lookup.
+    /// - Appends tokens to `tokens`; uses `tokens` tail as working space.
+    /// - Uses `pair_ranks` as working space for pair ranks.
+    ///
+    /// ## Arguments
+    /// * `span` - The byte span to encode.
+    /// * `tokens` - The target token buffer to append to.
+    /// * `pair_ranks` - Working space for pair ranks.
+    #[inline(always)]
+    fn encode_append_word(
         &self,
         span: &[u8],
         tokens: &mut Vec<T>,
+        pair_ranks: &mut Vec<T>,
     ) {
-        self.data.byte_vocab().append_tokens(span, tokens);
-    }
-
-    fn encode_append_span_normal(
-        &self,
-        span: &[u8],
-        tokens: &mut Vec<T>,
-    ) {
-        if let Some(token) = self.lookup_normal_token(span) {
-            // 1. Faster;
-            // 2. Correct-or: Some words may not exist in the pair mappings.
-            tokens.push(token);
-            return;
-        }
-
         // We reuse the output buffer as our working memory.
         // - `start` is the first index of the working memory buffer.
         let start = tokens.len();
 
-        // Define CURRENT as `tokens[start..end]`.
+        // Define CURRENT as `tokens[start..]`.
         // - CURRENT[i] := tokens[start + i]
-        self.append_tokens(span, tokens);
-        let mut end = tokens.len();
+        self.data.byte_vocab().append_tokens(span, tokens);
 
-        // Define PAIR_RANKS as `tokens[end..]`
-        // - there are `(end - start) - 1` items in PAIR_RANKS.
-        // - PAIR_RANKS[i] := tokens[end + i]
-        // - PAIR_RANKS[i] = pairs.get(&(CURRENT[i], CURRENT[i + 1]))
-
-        let get_pair_rank = {
-            |tok: &mut [T], i: usize| {
-                let pair = &(tok[start + i], tok[start + i + 1]);
-                match self.lookup_pair(pair) {
-                    Some(&token) => token,
-                    None => T::max_value(),
-                }
+        let pr_for_tokens = {
+            |tok: &[T], a: usize, b: usize| {
+                let pair = &(tok[start + a], tok[start + b]);
+                self.data
+                    .lookup_pair(pair)
+                    .unwrap_or_else(|| T::max_value())
             }
         };
 
-        for i in 1..(end - start) {
-            let rank = get_pair_rank(tokens, i - 1);
-            tokens.push(rank);
-        }
+        // We keep the following property:
+        // - pair_ranks[i] = pairs.get(&(CURRENT[i], CURRENT[i + 1]))
+        // - pair_ranks.len() = CURRENT.len() - 1 = end - start - 1
+        pair_ranks.clear();
+        pair_ranks.extend((0..(tokens.len() - start - 1)).map(|i| pr_for_tokens(tokens, i, i + 1)));
 
-        while let Some((t, i)) = tokens[end..]
+        while let Some((new_token, i)) = pair_ranks
             .iter()
             .enumerate()
-            .filter_map(|(i, &t)| {
-                if t == T::max_value() {
+            .filter_map(|(i, &new_token)| {
+                if new_token == T::max_value() {
                     None
                 } else {
-                    Some((t, i))
+                    Some((new_token, i))
                 }
             })
             .min()
@@ -139,36 +100,29 @@ impl<T: TokenType> MergeHeapVocabEncoder<T> {
             // - PAIR_RANKS[i] != max_value
             // - PAIR_RANKS[i] is smallest
 
-            // We need to merge CURRENT[i..=i+1] and PAIR_RANKS[i..=i+1]
-
             // Set CURRENT[i] to the new target rank.
-            tokens[start + i] = t;
+            tokens[start + i] = new_token;
 
             if i > 0 {
                 // If there is a preceding token, recompute PAIR_RANKS[i-1].
-                tokens[end + i - 1] = get_pair_rank(tokens, i - 1);
+                pair_ranks[i - 1] = pr_for_tokens(tokens, i - 1, i);
+            }
+
+            if i + 2 < tokens.len() - start {
+                // If this pair rank exists,
+                // it will become PAIR_RANKS[i] following the remove below.
+                pair_ranks[i + 1] = pr_for_tokens(tokens, i, i + 2);
             }
 
             // Drop PAIR_RANKS[i] and CURRENT[i+1].
-            // Order matters here for the indices.
-            tokens.remove(end + i);
+            pair_ranks.remove(i);
             tokens.remove(start + i + 1);
-
-            end -= 1;
-
-            if end + i < tokens.len() {
-                // If there is a following token, recompute PAIR_RANKS[i].
-                tokens[end + i] = get_pair_rank(tokens, i);
-            }
         }
-
-        // Drop the PAIR_RANKS buffer.
-        tokens.truncate(end);
     }
 }
 
 impl<T: TokenType> TokenEncoder<T> for MergeHeapVocabEncoder<T> {
-    fn segmentor(&self) -> &Arc<TextSegmentor> {
+    fn segmentor(&self) -> &TextSegmentor {
         &self.segmentor
     }
 
@@ -187,15 +141,29 @@ impl<T: TokenType> TokenEncoder<T> for MergeHeapVocabEncoder<T> {
         text: &str,
         tokens: &mut Vec<T>,
     ) -> anyhow::Result<()> {
+        let mut pair_vec = Vec::with_capacity(16);
         self.segmentor()
             .split_spans(text)
             .into_iter()
             .for_each(|span_ref| match span_ref {
-                SpanRef::Normal(span_str) => {
-                    self.encode_append_span_normal(span_str.as_bytes(), tokens)
+                SpanRef::Gap(_) => (),
+                SpanRef::Word(range) => {
+                    let span = &text[range].as_bytes();
+                    if let Some(token) = self.data.lookup_token(span) {
+                        // 1. Faster;
+                        // 2. Correct-or: Some words may not exist in the pair mappings.
+                        tokens.push(token);
+                    } else {
+                        if pair_vec.len() < span.len() - 1 {
+                            pair_vec.resize(span.len() - 1, T::max_value());
+                        }
+                        self.encode_append_word(span, tokens, &mut pair_vec);
+                    }
                 }
-                SpanRef::Special(s) => {
-                    tokens.push(self.special_vocab().lookup_token(s.as_bytes()).unwrap());
+                SpanRef::Special(range) => {
+                    let span = &text[range].as_bytes();
+                    let special_token = self.special_vocab().lookup_token(span).unwrap();
+                    tokens.push(special_token);
                 }
             });
 
@@ -210,7 +178,7 @@ mod tests {
 
     fn test_encoder<T: TokenType>() {
         let vocab = common_encoder_test_vocab();
-        let encoder = MergeHeapVocabEncoder::<T>::init(vocab.clone().into());
+        let encoder = MergeHeapVocabEncoder::<T>::init(vocab.clone().into(), None);
         common_encoder_tests(vocab.into(), &encoder)
     }
 

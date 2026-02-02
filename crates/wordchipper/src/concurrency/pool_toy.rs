@@ -1,0 +1,105 @@
+//! # Thread Pool Toy
+
+use crate::compat::threads;
+use core::fmt::Debug;
+use std::env;
+use std::num::NonZeroUsize;
+
+const MAX_POOL_SIZE: usize = 128;
+
+/// Resolve the max pool size.
+///
+/// ``min(max_pool, thread::available_parallelism() || MAX_POOL, env::var("RAYON_NUM_THREADS"))``
+pub(crate) fn resolve_max_pool(max_pool: Option<NonZeroUsize>) -> usize {
+    let sys_max: usize = {
+        let mut p = std::thread::available_parallelism()
+            .unwrap_or(NonZeroUsize::new(MAX_POOL_SIZE).unwrap())
+            .get();
+
+        if let Ok(t) = env::var("RAYON_NUM_THREADS") {
+            p = p.min(t.parse::<usize>().unwrap_or(p));
+        }
+
+        p
+    };
+
+    let max_pool = max_pool.map(|x| x.get()).unwrap_or(sys_max);
+
+    core::cmp::min(max_pool, sys_max)
+}
+
+/// Current Thread -> T Pool.
+pub struct PoolToy<T>
+where
+    T: Clone + Send,
+{
+    pool: Vec<T>,
+}
+
+impl<T> AsRef<T> for PoolToy<T>
+where
+    T: Clone + Send,
+{
+    fn as_ref(&self) -> &T {
+        self.get()
+    }
+}
+
+impl<T> PoolToy<T>
+where
+    T: Clone + Send,
+{
+    /// Create a new thread-local pool with the given vector of items.
+    pub fn new(pool: Vec<T>) -> Self {
+        assert!(!pool.is_empty());
+        Self { pool }
+    }
+
+    /// Initialize a new thread-local pool with the given item and maximum pool size.
+    pub fn init(
+        item: T,
+        max_pool: Option<NonZeroUsize>,
+    ) -> Self {
+        let max_pool = resolve_max_pool(max_pool);
+
+        Self::new(vec![item; max_pool])
+    }
+
+    /// Get a reference to the item for the current thread.
+    pub fn get(&self) -> &T {
+        let tid = threads::unstable_current_thread_id_hash();
+        &self.pool[tid % self.pool.len()]
+    }
+
+    /// Get the length of the pool.
+    #[allow(clippy::len_without_is_empty)]
+    pub fn len(&self) -> usize {
+        self.pool.len()
+    }
+}
+
+impl<T> Clone for PoolToy<T>
+where
+    T: Clone + Send,
+{
+    fn clone(&self) -> Self {
+        Self {
+            pool: self.pool.clone(),
+        }
+    }
+}
+
+impl<T> Debug for PoolToy<T>
+where
+    T: Clone + Send + Debug,
+{
+    fn fmt(
+        &self,
+        f: &mut core::fmt::Formatter<'_>,
+    ) -> core::fmt::Result {
+        f.debug_struct("PoolToy")
+            .field("item", &self.pool[0])
+            .field("len", &self.pool.len())
+            .finish()
+    }
+}

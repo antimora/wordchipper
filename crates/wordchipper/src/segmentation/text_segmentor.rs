@@ -2,43 +2,66 @@
 
 use crate::alloc::string::String;
 use crate::alloc::vec::Vec;
-use crate::regex::RegexWrapperPattern;
 use crate::regex::exact_match_union::exact_match_union_regex_pattern;
-use crate::regex::{RegexSupplierHandle, RegexWrapperHandle};
+use crate::regex::{RegexWrapper, RegexWrapperPattern};
 use crate::segmentation::segmentation_config::SegmentationConfig;
 use crate::types::TokenType;
 use crate::vocab::TokenVocab;
 use crate::vocab::size_hints::EXPECTED_BYTES_PER_TOKEN;
+use core::num::NonZeroUsize;
 use core::ops::Range;
 
 /// Word Reference for [`TextSegmentor`].
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub enum SpanRef<'a> {
+pub enum SpanRef {
     /// A normal word reference.
-    Normal(&'a str),
+    Word(Range<usize>),
 
     /// A special word reference.
-    Special(&'a str),
+    Special(Range<usize>),
+
+    /// A gap reference.
+    Gap(Range<usize>),
 }
 
-impl<'a> SpanRef<'a> {
-    /// Get the inner string slice.
-    ///
-    /// ## Returns
-    /// The string slice.
-    pub fn as_str(&self) -> &'a str {
-        match self {
-            SpanRef::Normal(s) => s,
-            SpanRef::Special(s) => s,
+impl From<SpanRef> for Range<usize> {
+    fn from(span: SpanRef) -> Self {
+        match span {
+            SpanRef::Word(range) => range,
+            SpanRef::Special(range) => range,
+            SpanRef::Gap(range) => range,
         }
+    }
+}
+
+fn offset_range(
+    range: Range<usize>,
+    offset: usize,
+) -> Range<usize> {
+    Range {
+        start: range.start + offset,
+        end: range.end + offset,
     }
 }
 
 /// Word Split + Special Words Segmentor
 #[derive(Clone)]
 pub struct TextSegmentor {
-    span_re: RegexSupplierHandle,
-    special_re: Option<RegexSupplierHandle>,
+    #[cfg(feature = "std")]
+    /// Regex for splitting words.
+    pub word_re: crate::concurrency::PoolToy<RegexWrapper>,
+
+    /// Regex for splitting words.
+    #[cfg(not(feature = "std"))]
+    pub word_re: RegexWrapper,
+
+    /// Regex for matching special words.
+    #[cfg(feature = "std")]
+    pub special_re: Option<crate::concurrency::PoolToy<RegexWrapper>>,
+
+    /// Regex for matching special words.
+    #[cfg(not(feature = "std"))]
+    pub special_re: Option<RegexWrapper>,
 }
 
 impl TextSegmentor {
@@ -46,17 +69,15 @@ impl TextSegmentor {
     ///
     /// ## Arguments
     /// * `config` - The segmentation configuration.
-    /// * `re_factory` - A factory function to create regex suppliers.
     ///
     /// ## Returns
     /// A new `TextSegmentor` instance.
-    pub fn from_config<T, F>(
+    pub fn from_config<T>(
         config: SegmentationConfig<T>,
-        re_factory: F,
+        max_pool: Option<NonZeroUsize>,
     ) -> Self
     where
         T: TokenType,
-        F: Fn(RegexWrapperHandle) -> RegexSupplierHandle,
     {
         let specials = config
             .special_vocab()
@@ -64,55 +85,85 @@ impl TextSegmentor {
             .map(|(span, _)| String::from_utf8(span.clone()).unwrap())
             .collect::<Vec<_>>();
 
-        Self::init(config.pattern, &specials, re_factory)
+        Self::from_patterns(config.pattern, &specials, max_pool)
     }
 
     /// Create a new text segmentor with the given regex pattern and special words.
     ///
     /// ## Arguments
-    /// * `pattern` - The word split pattern.
+    /// * `word_pattern` - The word split pattern.
     /// * `specials` - A slice of special word strings.
-    /// * `re_factory` - A factory function to create regex suppliers.
+    /// * `max_pool` - The maximum size of the regex pool; if None, lib defaults are used.
     ///
     /// ## Returns
     /// A new `TextSegmentor` instance.
-    pub fn init<P, S, F>(
-        pattern: P,
+    pub fn from_patterns<P, S>(
+        word_pattern: P,
         specials: &[S],
-        re_factory: F,
+        max_pool: Option<NonZeroUsize>,
     ) -> Self
     where
         P: Into<RegexWrapperPattern>,
         S: AsRef<str>,
-        F: Fn(RegexWrapperHandle) -> RegexSupplierHandle,
     {
-        let span_re = re_factory(pattern.into().into());
+        let span_re = word_pattern.into().compile().unwrap();
 
         let special_re = if specials.is_empty() {
             None
         } else {
-            Some(re_factory(exact_match_union_regex_pattern(specials).into()))
+            Some(exact_match_union_regex_pattern(specials).compile().unwrap())
         };
 
-        Self::new(span_re, special_re)
+        Self::new(span_re, special_re, max_pool)
     }
 
     /// Create a new text segmentor with the given regex suppliers.
     ///
     /// ## Arguments
-    /// * `word_re_supplier` - The regex supplier for word splitting.
-    /// * `special_re_supplier` - The optional regex supplier for special word matching.
+    /// * `word_regex` - The regex for word splitting.
+    /// * `special_regex` - The optional regex for special word matching.
+    /// * `max_pool` - The maximum size of the regex pool; if None, lib defaults are used.
     ///
     /// ## Returns
     /// A new `TextSegmentor` instance.
     pub fn new(
-        word_re_supplier: RegexSupplierHandle,
-        special_re_supplier: Option<RegexSupplierHandle>,
+        word_re: RegexWrapper,
+        special_re: Option<RegexWrapper>,
+        max_pool: Option<NonZeroUsize>,
     ) -> Self {
+        #[cfg(feature = "std")]
+        let word_re = crate::concurrency::PoolToy::init(word_re, max_pool);
+        #[cfg(feature = "std")]
+        let special_re = special_re.map(|r| crate::concurrency::PoolToy::init(r, max_pool));
+
+        #[cfg(not(feature = "std"))]
+        let _ = max_pool;
+
         Self {
-            span_re: word_re_supplier,
-            special_re: special_re_supplier,
+            word_re,
+            special_re,
         }
+    }
+
+    /// Get the span split regex.
+    pub fn word_regex(&self) -> &RegexWrapper {
+        #[cfg(feature = "std")]
+        return self.word_re.as_ref();
+
+        #[cfg(not(feature = "std"))]
+        return &self.word_re;
+    }
+
+    /// Get the optional special split regex.
+    pub fn special_regex(&self) -> Option<&RegexWrapper> {
+        #[cfg(feature = "std")]
+        return match &self.special_re {
+            None => None,
+            Some(pool) => Some(pool.as_ref()),
+        };
+
+        #[cfg(not(feature = "std"))]
+        return self.special_re.as_ref();
     }
 
     /// Find the next special span in the text.
@@ -127,28 +178,34 @@ impl TextSegmentor {
         &self,
         text: S,
     ) -> Option<Range<usize>> {
-        self.special_re
-            .as_ref()
-            .and_then(|p| p.get_regex().find_iter(text.as_ref()).next())
-            .map(|m| m.range())
+        match self.special_regex() {
+            None => None,
+            Some(re) => re.find_iter(text.as_ref()).next().map(|m| m.range()),
+        }
     }
 
-    /// Split a chunk of text into [`SpanRef::Normal`], appending to the `words` buffer.
+    /// Split a chunk of text into [`SpanRef::Word`], appending to the `words` buffer.
     ///
     /// ## Arguments
     /// * `text` - The text to split.
     /// * `words` - The target buffer to append to.
-    fn split_append_normal_words<'a>(
+    fn split_append_words(
         &self,
-        text: &'a str,
-        words: &mut Vec<SpanRef<'a>>,
-    ) {
-        words.extend(
-            self.span_re
-                .get_regex()
-                .find_iter(text)
-                .map(|m| SpanRef::Normal(m.as_str())),
-        )
+        text: &str,
+        offset: usize,
+        words: &mut Vec<SpanRef>,
+    ) -> usize {
+        let mut last = 0;
+        for m in self.word_regex().find_iter(text) {
+            let match_range = m.range();
+            if last < match_range.start {
+                words.push(SpanRef::Gap(last..match_range.start));
+            }
+
+            last = match_range.end;
+            words.push(SpanRef::Word(offset_range(match_range, offset)));
+        }
+        last
     }
 
     /// Split a chunk of text into spans, appending to the `words` buffer.
@@ -156,24 +213,34 @@ impl TextSegmentor {
     /// ## Arguments
     /// * `text` - The text to split.
     /// * `words` - The target buffer to append to.
-    pub fn split_append_spans<'a>(
+    pub fn split_append_spans(
         &self,
-        text: &'a str,
-        words: &mut Vec<SpanRef<'a>>,
+        text: &str,
+        words: &mut Vec<SpanRef>,
     ) {
         let mut current = text;
+        let mut offset = 0;
 
         while let Some(range) = self.next_special_span(current) {
             let pre = &current[..range.start];
-            self.split_append_normal_words(pre, words);
+            let last = self.split_append_words(pre, offset, words);
 
-            words.push(SpanRef::Special(&current[range.clone()]));
+            if last < range.start {
+                words.push(SpanRef::Gap(offset_range(last..range.start, offset)));
+            }
+
+            words.push(SpanRef::Special(offset_range(range.clone(), offset)));
 
             current = &current[range.end..];
+            offset += range.end;
         }
 
         if !current.is_empty() {
-            self.split_append_normal_words(current, words);
+            let last = self.split_append_words(current, offset, words);
+
+            if last < current.len() {
+                words.push(SpanRef::Gap(offset_range(last..current.len(), offset)));
+            }
         }
     }
 
@@ -184,32 +251,44 @@ impl TextSegmentor {
     ///
     /// ## Returns
     /// A vector of `SpanRef` items.
-    pub fn split_spans<'a>(
+    pub fn split_spans(
         &self,
-        text: &'a str,
-    ) -> Vec<SpanRef<'a>> {
-        let capacity = text.len() as f64 / (EXPECTED_BYTES_PER_TOKEN * 0.5);
+        text: &str,
+    ) -> Vec<SpanRef> {
+        let capacity = text.len() as f64 / (EXPECTED_BYTES_PER_TOKEN * 0.8);
         let mut words = Vec::with_capacity(capacity as usize);
 
         self.split_append_spans(text, &mut words);
         words
     }
 
-    /// Rewrite text by splitting and re-joining with spaces.
+    /// Rewrite text by splitting and re-joining without `Gap` matches.
     ///
     /// ## Arguments
     /// * `text` - The text to rewrite.
     ///
     /// ## Returns
     /// The rewritten string.
-    pub fn rewrite<S: AsRef<str>>(
+    pub fn remove_gaps<S: AsRef<str>>(
         &self,
         text: S,
     ) -> String {
         let text = text.as_ref();
         let mut words = Vec::new();
         self.split_append_spans(text, &mut words);
-        words.into_iter().map(|w| w.as_str()).collect()
+        words
+            .into_iter()
+            .filter(|m| !matches!(m, SpanRef::Gap(_)))
+            .map(|w| &text[Range::<usize>::from(w)])
+            .collect()
+    }
+
+    /// Batch version of [`Self::remove_gaps`]
+    pub fn batch_remove_gaps<S: AsRef<str>>(
+        &self,
+        texts: &[S],
+    ) -> Vec<String> {
+        texts.iter().map(|t| self.remove_gaps(t)).collect()
     }
 }
 
@@ -217,18 +296,7 @@ impl TextSegmentor {
 mod tests {
     use super::*;
     use crate::alloc::vec;
-    use crate::regex::default_regex_supplier;
     use crate::vocab::public::openai::patterns::OA_GPT3_CL100K_WORD_PATTERN;
-
-    #[test]
-    fn test_span_ref() {
-        let buf = "hello world!";
-        let n_ref = SpanRef::Normal(&buf[..5]);
-        let s_ref = SpanRef::Special(&buf[6..11]);
-
-        assert_eq!(n_ref.as_str(), "hello");
-        assert_eq!(s_ref.as_str(), "world");
-    }
 
     #[test]
     fn test_split_words() {
@@ -238,19 +306,19 @@ mod tests {
             SegmentationConfig::from_pattern(OA_GPT3_CL100K_WORD_PATTERN)
                 .with_special_words([("<|FNORD|>", 4000), ("<|NORP|>", 4001)]);
 
-        let segmentor = TextSegmentor::from_config(config, default_regex_supplier);
+        let segmentor = TextSegmentor::from_config(config, Some(NonZeroUsize::new(1).unwrap()));
 
         let buf = "hello<|FNORD|> wor<|NORP|>ld!";
 
         assert_eq!(
             &segmentor.split_spans(buf),
             &vec![
-                SpanRef::Normal(&buf[..5]),
-                SpanRef::Special(&buf[5..14]),
-                SpanRef::Normal(&buf[14..18]),
-                SpanRef::Special(&buf[18..26]),
-                SpanRef::Normal(&buf[26..28]),
-                SpanRef::Normal(&buf[28..]),
+                SpanRef::Word(0..5),
+                SpanRef::Special(5..14),
+                SpanRef::Word(14..18),
+                SpanRef::Special(18..26),
+                SpanRef::Word(26..28),
+                SpanRef::Word(28..buf.len()),
             ]
         );
     }
@@ -261,9 +329,9 @@ mod tests {
 
         let config: SegmentationConfig<T> = SegmentationConfig::from_pattern(r"\w+");
 
-        let segmentor = TextSegmentor::from_config(config, default_regex_supplier);
+        let segmentor = TextSegmentor::from_config(config, Some(NonZeroUsize::new(1).unwrap()));
 
         let buf = "hello world!";
-        assert_eq!(segmentor.rewrite(buf), "helloworld");
+        assert_eq!(segmentor.remove_gaps(buf), "helloworld");
     }
 }

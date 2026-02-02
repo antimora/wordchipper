@@ -3,7 +3,6 @@ use burn::tensor::{AsIndex, Slice};
 use clap::Parser;
 use similar::{ChangeTag, TextDiff};
 use std::collections::HashSet;
-use std::sync::Arc;
 use std::time::Duration;
 use wordchipper::decoders::{DictionaryDecoder, TokenDecoder};
 use wordchipper::encoders::{DefaultTokenEncoder, TokenEncoder};
@@ -115,13 +114,10 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
-    let byte_vocab: Arc<ByteMapVocab<T>> = Arc::new(Default::default());
+    let byte_vocab: ByteMapVocab<T> = Default::default();
 
     println!("- train");
-    let vocab: Arc<UnifiedTokenVocab<T>> = trainer
-        .train(byte_vocab.clone())
-        .expect("training failed")
-        .into();
+    let vocab: UnifiedTokenVocab<T> = trainer.train(byte_vocab.clone()).expect("training failed");
 
     let training_duration = std::time::Instant::now().duration_since(t0);
     println!("- training_duration: {:.2?}", training_duration);
@@ -133,7 +129,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     if args.time_encode_decode {
-        let encoder: DefaultTokenEncoder<T> = DefaultTokenEncoder::init(vocab.clone());
+        let encoder: DefaultTokenEncoder<T> = DefaultTokenEncoder::init(vocab.clone(), None);
         let encoder = ParallelRayonEncoder::new(encoder);
 
         let decoder = DictionaryDecoder::from_unified_vocab(vocab);

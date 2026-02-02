@@ -1,6 +1,5 @@
 //! # Pair Map ``{ (T, T) -> T }`` Token Vocabulary
 
-use crate::alloc::sync::Arc;
 use crate::alloc::vec::Vec;
 use crate::decoders::TokenDecoder;
 use crate::decoders::utility::pair_decoder::PairExpansionDecoder;
@@ -59,10 +58,10 @@ pub fn try_validate_pair_map<T: TokenType>(
 #[derive(Default, Debug, Clone)]
 pub struct PairMapVocab<T: TokenType> {
     /// Byte/token mapping table.
-    byte_vocab: Arc<ByteMapVocab<T>>,
+    pub byte_vocab: ByteMapVocab<T>,
 
     /// Map of ``{ (T, T) -> T }``.
-    pairs: PairTokenMap<T>,
+    pub pair_map: PairTokenMap<T>,
 }
 
 impl<T: TokenType> PairMapVocab<T> {
@@ -74,41 +73,32 @@ impl<T: TokenType> PairMapVocab<T> {
     ///
     /// ## Returns
     /// A `Result` containing the new `PairMapVocab` instance or an error.
-    pub fn init<B>(
-        byte_vocab: B,
-        pairs: PairTokenMap<T>,
-    ) -> anyhow::Result<Self>
-    where
-        B: Into<Arc<ByteMapVocab<T>>>,
-    {
-        let byte_vocab = byte_vocab.into();
+    pub fn init(
+        byte_vocab: ByteMapVocab<T>,
+        mut pairs: PairTokenMap<T>,
+    ) -> anyhow::Result<Self> {
         try_validate_pair_map(&byte_vocab, &pairs)?;
-        Ok(Self { byte_vocab, pairs })
+        pairs.shrink_to_fit();
+        Ok(Self {
+            byte_vocab,
+            pair_map: pairs,
+        })
     }
 
     /// Get the byte/token mapping table.
-    ///
-    /// ## Returns
-    /// A reference to the internal `ByteMapVocab` arc.
-    pub fn byte_vocab(&self) -> &Arc<ByteMapVocab<T>> {
+    pub fn byte_vocab(&self) -> &ByteMapVocab<T> {
         &self.byte_vocab
     }
 
     /// Get the map of pairs.
-    ///
-    /// ## Returns
-    /// A reference to the internal `PairTokenMap`.
     pub fn pairs(&self) -> &PairTokenMap<T> {
-        &self.pairs
+        &self.pair_map
     }
 
     /// Get the number of tokens in the vocabulary.
-    ///
-    /// ## Returns
-    /// The total number of tokens (bytes + pairs).
     #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
-        self.byte_vocab.len() + self.pairs.len()
+        self.byte_vocab.len() + self.pair_map.len()
     }
 
     /// Looks up a pair.
@@ -121,8 +111,8 @@ impl<T: TokenType> PairMapVocab<T> {
     pub fn lookup_pair(
         &self,
         pair: &Pair<T>,
-    ) -> Option<&T> {
-        self.pairs.get(pair)
+    ) -> Option<T> {
+        self.pair_map.get(pair).copied()
     }
 }
 
@@ -130,14 +120,14 @@ impl<T: TokenType> TokenVocab<T> for PairMapVocab<T> {
     fn unordered_tokens(&self) -> impl Iterator<Item = T> {
         self.byte_vocab
             .unordered_tokens()
-            .chain(self.pairs.values().copied())
+            .chain(self.pair_map.values().copied())
     }
 
     fn span_pairs(&self) -> impl Iterator<Item = (Vec<u8>, T)> {
         let decoder = PairExpansionDecoder::from_pair_vocab(self);
 
         self.byte_vocab.span_pairs().chain(
-            self.pairs
+            self.pair_map
                 .values()
                 .map(move |&t| (decoder.try_decode_to_bytes([t]).unwrap(), t)),
         )
@@ -147,15 +137,14 @@ impl<T: TokenType> TokenVocab<T> for PairMapVocab<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alloc::sync::Arc;
 
     #[test]
     fn test_tokens_sorted() {
         type T = u32;
-        let byte_vocab: Arc<ByteMapVocab<T>> = Arc::new(Default::default());
+        let byte_vocab: ByteMapVocab<T> = Default::default();
 
         let mut vocab = PairMapVocab::<T> {
-            pairs: PairTokenMap::default(),
+            pair_map: PairTokenMap::default(),
             byte_vocab: byte_vocab.clone(),
         };
 
@@ -163,9 +152,9 @@ mod tests {
 
         assert_eq!(&vocab.sorted_tokens(), &byte_vocab.sorted_tokens());
 
-        vocab.pairs.insert((1, 2), 300);
-        vocab.pairs.insert((3, 4), 301);
-        vocab.pairs.insert((300, 301), 302);
+        vocab.pair_map.insert((1, 2), 300);
+        vocab.pair_map.insert((3, 4), 301);
+        vocab.pair_map.insert((300, 301), 302);
 
         assert_eq!(vocab.max_token(), 302);
         assert_eq!(vocab.len(), 256 + 3);

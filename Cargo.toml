@@ -9,7 +9,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.2"
+version = "0.2.0"
 repository = "https://github.com/crutcher/wordchipper"
 rust-version = "1.93.0"
 edition = "2024"
@@ -37,6 +37,7 @@ directories-next = "^2.0"
 downloader = "^0.2"
 edit-distance = "^2.2"
 hashbrown = "^0.16"
+humansize = "^2.1"
 parking_lot = "^0.12"
 parquet = "^57.1"
 rayon = "^1.11"
@@ -47,11 +48,12 @@ similar = "^2.7.0"
 stackvec = "^0.2.1"
 tempdir = "^0.3"
 
+fancy-regex = { version = "0.13.0", default-features = false }
+regex = { version = "1.10.3", default-features = false }
+
 anyhow = { version = "^1.0", default-features = false }
-fancy-regex = { version = "^0.17", default-features = false }
 log = { version = "^0.4", default-features = false }
 num-traits = { version = "^0.2.19", default-features = false }
-regex = { version = "^1.12", default-features = false }
 tracing = { version = "^0.1", default-features = false }
 
 tiktoken-rs = "^0.9.1"

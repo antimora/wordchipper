@@ -1,17 +1,16 @@
 //! # Common Decoder Unit Tests
 
-use crate::alloc::sync::Arc;
 use crate::alloc::vec;
 use crate::alloc::vec::Vec;
+use crate::compat::strings::string_from_utf8_lossy;
 use crate::decoders::TokenDecoder;
 use crate::encoders::{DefaultTokenEncoder, TokenEncoder};
 use crate::types::{TokenType, check_is_send, check_is_sync};
-use crate::vocab::utility::strings::string_from_lossy_utf8;
 use crate::vocab::{TokenVocab, UnifiedTokenVocab};
 
 /// Common Unittest for TokenDecoder implementations.
 pub fn common_decoder_unit_test<T: TokenType, D: TokenDecoder<T>>(
-    vocab: Arc<UnifiedTokenVocab<T>>,
+    vocab: UnifiedTokenVocab<T>,
     decoder: &D,
 ) {
     check_is_send(decoder);
@@ -23,7 +22,7 @@ pub fn common_decoder_unit_test<T: TokenType, D: TokenDecoder<T>>(
         "it's not the heat, it's the salt",
     ];
 
-    let encoder = DefaultTokenEncoder::<T>::init(vocab.clone());
+    let encoder = DefaultTokenEncoder::<T>::init(vocab.clone(), None);
 
     let token_batch = encoder.try_encode_batch(&samples).unwrap();
     let decoded_strings = decoder.try_decode_batch_to_strings(&token_batch).unwrap();
@@ -33,7 +32,7 @@ pub fn common_decoder_unit_test<T: TokenType, D: TokenDecoder<T>>(
             .try_decode_batch_to_bytes(&token_batch)
             .unwrap()
             .into_iter()
-            .map(string_from_lossy_utf8)
+            .map(string_from_utf8_lossy)
             .collect::<Vec<_>>(),
         &decoded_strings
     );

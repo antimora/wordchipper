@@ -1,6 +1,5 @@
 //! # Byte/Token Mapping Table
 
-use crate::alloc::sync::Arc;
 use crate::alloc::vec;
 use crate::alloc::vec::Vec;
 use crate::types::{CommonHashMap, TokenType};
@@ -10,7 +9,7 @@ use core::fmt::Debug;
 /// Build a [`ByteMapVocab`] with all tokens shifted by `shift`.
 ///
 /// This is a purposely stupid byte map; useful for testing.
-pub fn build_test_shift_byte_vocab<T: TokenType>(shift: usize) -> Arc<ByteMapVocab<T>> {
+pub fn build_test_shift_byte_vocab<T: TokenType>(shift: usize) -> ByteMapVocab<T> {
     // This is a purposely stupid byte map.
     ByteMapVocab::<T>::from_byte_to_token(
         &ByteMapVocab::<T>::default()
@@ -19,7 +18,6 @@ pub fn build_test_shift_byte_vocab<T: TokenType>(shift: usize) -> Arc<ByteMapVoc
             .map(|&t| t + T::from_usize(shift).unwrap())
             .collect::<Vec<T>>(),
     )
-    .into()
 }
 
 /// ``0..=255`` Rank Byte/Token Bijection Table
@@ -30,10 +28,10 @@ pub fn build_test_shift_byte_vocab<T: TokenType>(shift: usize) -> Arc<ByteMapVoc
 #[derive(Clone, PartialEq)]
 pub struct ByteMapVocab<T: TokenType> {
     /// Hash map from token to byte ordinal value.
-    token_to_byte: CommonHashMap<T, u8>,
+    pub token_to_byte: CommonHashMap<T, u8>,
 
     /// Table mapping from byte ordinal (position) to token.
-    byte_to_token: [T; 256],
+    pub byte_to_token: [T; 256],
 }
 
 impl<T: TokenType> Debug for ByteMapVocab<T> {
@@ -73,11 +71,12 @@ impl<T: TokenType> ByteMapVocab<T> {
 
         let byte_to_token: [T; 256] = byte_to_token.try_into().unwrap();
 
-        let token_to_byte: CommonHashMap<T, u8> = byte_to_token
+        let mut token_to_byte: CommonHashMap<T, u8> = byte_to_token
             .iter()
             .enumerate()
             .map(|(t, &token)| (token, t as u8))
             .collect();
+        token_to_byte.shrink_to_fit();
 
         assert_eq!(token_to_byte.len(), 256);
 
@@ -151,6 +150,7 @@ impl<T: TokenType> ByteMapVocab<T> {
     ///
     /// ## Returns
     /// The token corresponding to the byte.
+    #[inline(always)]
     pub fn get_token(
         &self,
         byte: u8,
@@ -163,6 +163,7 @@ impl<T: TokenType> ByteMapVocab<T> {
     /// ## Arguments
     /// * `bytes` - The slice of bytes to translate and append.
     /// * `tokens` - The target token buffer.
+    #[inline(always)]
     pub fn append_tokens(
         &self,
         bytes: &[u8],

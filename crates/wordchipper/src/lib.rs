@@ -94,11 +94,11 @@
 //! type T = u32;
 //!
 //! let mut disk_cache = WordchipperDiskCache::default();
-//! let vocab: Arc<UnifiedTokenVocab<T>> =
+//! let vocab: UnifiedTokenVocab<T> =
 //!     load_o200k_harmony_vocab(&mut disk_cache)?.into();
 //!
-//! let encoder: DefaultTokenEncoder<T> =
-//! DefaultTokenEncoder::init_with_factory(vocab.clone(), regex_pool_supplier);
+//! let encoder: DefaultTokenEncoder<T> = DefaultTokenEncoder::init(
+//!     vocab.clone(), None);
 //! let encoder = ParallelRayonEncoder::new(encoder);
 //!
 //! let decoder = DictionaryDecoder::from_unified_vocab(vocab.clone());
@@ -119,6 +119,10 @@ pub mod training;
 #[doc(inline)]
 pub use wordchipper_disk_cache as disk_cache;
 
+#[cfg(feature = "std")]
+pub mod concurrency;
+
+pub mod compat;
 pub mod decoders;
 pub mod encoders;
 pub mod regex;
