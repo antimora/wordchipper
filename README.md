@@ -8,7 +8,8 @@
 
 I am usually available as `@crutcher` on the Burn Discord:
 
-* Burn Discord: [![Discord](https://img.shields.io/discord/1038839012602941528.svg?color=7289da&&logo=discord)](https://discord.gg/uPEBbYYDB6)
+* Burn
+  Discord: [![Discord](https://img.shields.io/discord/1038839012602941528.svg?color=7289da&&logo=discord)](https://discord.gg/uPEBbYYDB6)
 
 ## Overview
 
@@ -138,7 +139,7 @@ let mut disk_cache = WordchipperDiskCache::default();
 let vocab: Arc<UnifiedTokenVocab<T>> = load_o200k_harmony_vocab(&mut disk_cache)?.into();
 
 let encoder: DefaultTokenEncoder<T> =
-    DefaultTokenEncoder::init_with_factory(vocab.clone(), regex_pool_supplier);
+    DefaultTokenEncoder::init(vocab.clone(), None);
 let encoder = ParallelRayonEncoder::new(encoder);
 
 let decoder = DictionaryDecoder::from_unified_vocab(vocab.clone());
@@ -163,7 +164,7 @@ fn example<T: TokenType>(
     vocab: Arc<UnifiedTokenVocab<T>>,
     batch: &[&str],
 ) -> Vec<Vec<T>> {
-    let encoder: DefaultTokenEncoder<T> = DefaultTokenEncoder::init(vocab);
+    let encoder: DefaultTokenEncoder<T> = DefaultTokenEncoder::init(vocab, None);
 
     #[cfg(feature = "rayon")]
     let encoder = wordchipper::rayon::ParallelRayonEncoder::new(encoder);
@@ -260,12 +261,9 @@ fn example<I, S>(
         trainer.update_from_samples(batch.as_ref());
     }
 
-    let byte_vocab: Arc<ByteMapVocab<T>> = Arc::new(Default::default());
-
-    let vocab: Arc<UnifiedTokenVocab<T>> = trainer
-        .train(byte_vocab.clone())
-        .expect("training failed")
-        .into();
+    let vocab: UnifiedTokenVocab<T> = trainer
+        .train(Default::default())
+        .expect("training failed");
 
     if let Some(path) = tiktoken_save_path {
         save_tiktoken_vocab_path(&vocab.span_vocab.span_map(), &path)
@@ -273,7 +271,7 @@ fn example<I, S>(
         println!("- tiktoken vocab: {path:?}");
     }
 
-    let encoder: DefaultTokenEncoder<T> = DefaultTokenEncoder::init(vocab.clone());
+    let encoder: DefaultTokenEncoder<T> = DefaultTokenEncoder::init(vocab.clone(), None);
     let encoder = ParallelRayonEncoder::new(encoder);
 
     let decoder = DictionaryDecoder::from_unified_vocab(vocab.clone());
