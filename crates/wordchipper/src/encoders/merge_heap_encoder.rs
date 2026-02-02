@@ -147,17 +147,15 @@ impl<T: TokenType> TokenEncoder<T> for MergeHeapVocabEncoder<T> {
                 .into_iter()
                 .for_each(|span_ref| match span_ref {
                     SpanRef::Normal(s) => {
-                        let span = s.as_bytes();
-                        if span.len() == 1 {
-                            tokens.push(self.data.byte_vocab().get_token(span[0]));
-                        } else if let Some(token) = self.data.lookup_token(span) {
-                            // 2. Correct-or: Some words may not exist in the pair mappings.
-                            tokens.push(token);
+                       if let Some(token) = self.data.lookup_token(s.as_bytes()) {
+                           // 2. Correct-or: Some words may not exist in the pair mappings.
+                           tokens.push(token);
                         } else {
                             self.encode_append_span_normal(s.as_bytes(), tokens)
                         }
                     }
                     SpanRef::Special(s) => {
+                        // let span = s.as_bytes();
                         let special_token =
                             self.special_vocab().lookup_token(s.as_bytes()).unwrap();
                         tokens.push(special_token);
