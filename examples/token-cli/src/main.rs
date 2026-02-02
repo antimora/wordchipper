@@ -6,7 +6,7 @@ use std::time::Duration;
 use wordchipper::decoders::{DictionaryDecoder, TokenDecoder};
 use wordchipper::disk_cache::WordchipperDiskCache;
 use wordchipper::encoders::{DefaultTokenEncoder, TokenEncoder};
-use wordchipper::rayon::ParallelRayonDecoder;
+use wordchipper::rayon::{ParallelRayonDecoder, ParallelRayonEncoder};
 use wordchipper::segmentation::TextSegmentor;
 use wordchipper::vocab::UnifiedTokenVocab;
 use wordchipper::vocab::public::openai::load_o200k_harmony_vocab;
@@ -66,7 +66,7 @@ fn run_load(args: &Args) -> anyhow::Result<()> {
     let vocab: UnifiedTokenVocab<T> = load_o200k_harmony_vocab(&mut disk_cache)?;
 
     let wc_tokenizer = FullMontyTokenizer::init(
-        DefaultTokenEncoder::<T>::init(vocab.clone()),
+        ParallelRayonEncoder::new(DefaultTokenEncoder::<T>::init(vocab.clone())),
         ParallelRayonDecoder::new(DictionaryDecoder::from_unified_vocab(vocab.clone())),
     );
 
@@ -129,12 +129,14 @@ fn run_load(args: &Args) -> anyhow::Result<()> {
         let batch = batch.iter().map(|s| s.as_str()).collect::<Vec<_>>();
 
         let t0 = std::time::Instant::now();
+        /*
         let wc_encode_batch: anyhow::Result<Vec<Vec<T>>> = batch
             .par_iter()
             .map(|s| wc_tokenizer.encoder.try_encode(s))
             .collect();
-
         let wc_encode_batch = wc_encode_batch?;
+         */
+        let wc_encode_batch = wc_tokenizer.encoder.try_encode_batch(&batch).unwrap();
 
         wc_tokenizer.encoder.try_encode_batch(&batch).unwrap();
         let t1 = std::time::Instant::now();
@@ -145,7 +147,6 @@ fn run_load(args: &Args) -> anyhow::Result<()> {
             .iter()
             .map(|tokens| tokens.len())
             .sum::<usize>();
-
 
         {
             let t0 = std::time::Instant::now();

@@ -65,7 +65,6 @@ impl<T: TokenType> MergeHeapVocabEncoder<T> {
         self.data.byte_vocab().append_tokens(span, tokens);
     }
 
-    #[inline(always)]
     fn encode_append_span_normal(
         &self,
         span: &[u8],

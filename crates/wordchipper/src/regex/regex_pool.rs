@@ -7,23 +7,51 @@ use crate::regex::regex_wrapper::RegexWrapper;
 use crate::types::CommonHashMap;
 use core::fmt::Debug;
 use core::num::NonZero;
+use core::sync::atomic::Ordering;
 use parking_lot::RwLock;
+use std::cell::RefCell;
+use std::num::NonZeroU64;
+use std::sync::atomic::AtomicUsize;
+use std::thread;
 use std::thread::ThreadId;
 
 fn unsafe_threadid_to_u64(thread_id: &ThreadId) -> u64 {
     unsafe { std::mem::transmute(thread_id) }
 }
 
+/// Stub
+struct FakeThreadId(NonZeroU64);
+
+fn hash_current_thread() -> usize {
+    // It's easier to use unsafe than to use nightly. Rust has this nice u64 thread id counter
+    // that works great for our use case of avoiding collisions in our array. Unfortunately,
+    // it's private. However, there are only so many ways you can layout a u64, so just transmute
+    // https://github.com/rust-lang/rust/issues/67939
+    const _: [u8; 8] = [0; std::mem::size_of::<std::thread::ThreadId>()];
+    const _: [u8; 8] = [0; std::mem::size_of::<FakeThreadId>()];
+    let x = unsafe {
+        std::mem::transmute::<std::thread::ThreadId, FakeThreadId>(thread::current().id()).0
+    };
+    u64::from(x) as usize
+}
+
 /// Interior-Mutable Thread-Local Regex Pool
 ///
 /// In HPC applications, under some loads, interior buffers in compiled regex
 /// can block. This pool exists to mitigate that, by cloning regex-per-thread.
-#[derive(Clone)]
 pub struct RegexWrapperPool {
-    regex: Arc<RegexWrapper>,
+    pool: Vec<RegexWrapper>,
 
-    max_pool: u64,
-    pool: Arc<RwLock<CommonHashMap<u64, Arc<RegexWrapper>>>>,
+    counter: AtomicUsize,
+}
+
+impl Clone for RegexWrapperPool {
+    fn clone(&self) -> Self {
+        Self {
+            pool: self.pool.clone(),
+            counter: AtomicUsize::new(0),
+        }
+    }
 }
 
 impl Debug for RegexWrapperPool {
@@ -32,13 +60,13 @@ impl Debug for RegexWrapperPool {
         f: &mut core::fmt::Formatter<'_>,
     ) -> core::fmt::Result {
         f.debug_struct("RegexPool")
-            .field("regex", &self.regex)
+            .field("regex", &self.get_regex())
             .finish()
     }
 }
 
-impl From<Arc<RegexWrapper>> for RegexWrapperPool {
-    fn from(regex: Arc<RegexWrapper>) -> Self {
+impl From<RegexWrapper> for RegexWrapperPool {
+    fn from(regex: RegexWrapper) -> Self {
         Self::new(regex)
     }
 }
@@ -51,51 +79,40 @@ impl RegexWrapperPool {
     ///
     /// ## Returns
     /// A new `RegexWrapperPool` instance.
-    pub fn new(regex: Arc<RegexWrapper>) -> Self {
+    pub fn new(regex: RegexWrapper) -> Self {
         let max_pool = std::thread::available_parallelism()
             .unwrap_or(NonZero::new(128).unwrap())
             .get() as u64;
 
+        let pool = (0..max_pool).map(|_| regex.clone()).collect::<Vec<_>>();
+
         Self {
-            regex,
-            max_pool,
-            pool: Arc::new(RwLock::new(Default::default())),
+            pool,
+            counter: AtomicUsize::new(0),
         }
     }
 
     /// Returns the number of regex instances in the pool.
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
-        self.pool.read().len()
-    }
-
-    /// Returns true if the pool is empty.
-    pub fn is_empty(&self) -> bool {
-        self.pool.read().is_empty()
-    }
-
-    /// Clear the internal regex pool.
-    pub fn clear(&self) {
-        self.pool.write().clear();
+        self.pool.len()
     }
 }
 
 impl RegexSupplier for RegexWrapperPool {
-    fn get_regex(&self) -> Arc<RegexWrapper> {
-        let thread_id = std::thread::current().id();
-        let slot = unsafe_threadid_to_u64(&thread_id) % self.max_pool;
-
-        if let Some(regex) = self.pool.read().get(&slot) {
-            return regex.clone();
-        }
-
-        let mut writer = self.pool.write();
-        let re = Arc::new((*self.regex).clone());
-        writer.insert(slot, re.clone());
-        re
+    fn get_regex(&self) -> &RegexWrapper {
+        // let tid = hash_current_thread();
+        let id = self
+            .counter
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
+                Some((x + 1) % self.pool.len())
+            })
+            .unwrap();
+        &self.pool[id % self.pool.len()]
     }
 
     fn get_pattern(&self) -> String {
-        self.regex.as_str().to_string()
+        self.pool[0].as_str().to_string()
     }
 }
 
@@ -104,27 +121,16 @@ mod tests {
     use super::*;
     use crate::alloc::string::ToString;
     use crate::regex::regex_wrapper::RegexWrapperPattern;
+    use fancy_regex::internal::compile;
 
     #[test]
     fn test_regex_pool() {
         let pattern: RegexWrapperPattern = r"foo".into();
-        let regex: Arc<RegexWrapper> = pattern.compile().unwrap().into();
+        let regex: RegexWrapper = pattern.compile().unwrap();
 
-        let pool: RegexWrapperPool = regex.clone().into();
+        let pool: RegexWrapperPool = RegexWrapperPool::new(regex.clone());
+
         assert_eq!(pool.get_pattern(), r"foo");
         assert!(format!("{:?}", pool).contains(&format!("{:?}", regex).to_string()));
-
-        let r0 = pool.get_regex();
-        assert_eq!(r0.as_str(), r"foo");
-
-        assert!(Arc::ptr_eq(&r0, &pool.get_regex()));
-
-        assert_eq!(pool.len(), 1);
-        assert!(!pool.is_empty());
-
-        pool.clear();
-
-        assert_eq!(pool.len(), 0);
-        assert!(pool.is_empty());
     }
 }

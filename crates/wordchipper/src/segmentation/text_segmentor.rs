@@ -3,7 +3,8 @@
 use crate::alloc::string::String;
 use crate::alloc::vec::Vec;
 use crate::regex::exact_match_union::exact_match_union_regex_pattern;
-use crate::regex::{RegexWrapper, RegexWrapperPattern};
+use crate::regex::regex_pool::RegexWrapperPool;
+use crate::regex::{RegexSupplier, RegexWrapper, RegexWrapperPattern};
 use crate::segmentation::segmentation_config::SegmentationConfig;
 use crate::types::TokenType;
 use crate::vocab::TokenVocab;
@@ -36,8 +37,8 @@ impl<'a> SpanRef<'a> {
 /// Word Split + Special Words Segmentor
 #[derive(Clone)]
 pub struct TextSegmentor {
-    span_re: RegexWrapper,
-    special_re: Option<RegexWrapper>,
+    span_re: RegexWrapperPool,
+    special_re: Option<RegexWrapperPool>,
 }
 
 impl TextSegmentor {
@@ -97,23 +98,29 @@ impl TextSegmentor {
     /// ## Returns
     /// A new `TextSegmentor` instance.
     pub fn new(
-        word_re: RegexWrapper,
+        span_r: RegexWrapper,
         special_re: Option<RegexWrapper>,
     ) -> Self {
+        let span_re = RegexWrapperPool::from(span_r);
+        let special_re = special_re.map(RegexWrapperPool::from);
+
         Self {
-            span_re: word_re,
+            span_re,
             special_re,
         }
     }
 
     /// Get the span split regex.
     pub fn span_re(&self) -> &RegexWrapper {
-        &self.span_re
+        self.span_re.get_regex()
     }
 
     /// Get the optional special split regex.
     pub fn special_re(&self) -> Option<&RegexWrapper> {
-        self.special_re.as_ref()
+        match &self.special_re {
+            None => None,
+            Some(special_re) => Some(special_re.get_regex()),
+        }
     }
 
     /// Find the next special span in the text.
@@ -131,7 +138,7 @@ impl TextSegmentor {
         match self.special_re {
             None => None,
             Some(ref special_re) => {
-                let mut iter = special_re.find_iter(text.as_ref());
+                let mut iter = special_re.get_regex().find_iter(text.as_ref());
                 iter.next().map(|m| m.range())
             }
         }
@@ -149,6 +156,7 @@ impl TextSegmentor {
     ) {
         words.extend(
             self.span_re
+                .get_regex()
                 .find_iter(text)
                 .map(|m| SpanRef::Normal(m.as_str())),
         )

@@ -107,11 +107,7 @@ where
         &mut self,
         text: S,
     ) {
-        update_word_counts_from_text(
-            &mut self.word_counts,
-            &self.regex_supplier.get_regex(),
-            text,
-        )
+        update_word_counts_from_text(&mut self.word_counts, self.regex_supplier.get_regex(), text)
     }
 
     /// Update word counts inplace from a sample iterator.
@@ -124,7 +120,7 @@ where
     {
         let regex = self.regex_supplier.get_regex();
         for sample in samples {
-            update_word_counts_from_text(&mut self.word_counts, &regex, sample);
+            update_word_counts_from_text(&mut self.word_counts, regex, sample);
         }
     }
 

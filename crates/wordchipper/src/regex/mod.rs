@@ -75,7 +75,7 @@ pub fn default_regex_supplier(regex: RegexWrapperHandle) -> RegexSupplierHandle 
 /// A `RegexSupplierHandle`.
 pub fn regex_pool_supplier(regex: RegexWrapperHandle) -> RegexSupplierHandle {
     #[cfg(feature = "std")]
-    return alloc::sync::Arc::new(regex_pool::RegexWrapperPool::new(regex));
+    return alloc::sync::Arc::new(regex_pool::RegexWrapperPool::new(regex.as_ref().clone()));
 
     #[cfg(not(feature = "std"))]
     regex
