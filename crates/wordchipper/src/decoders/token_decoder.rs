@@ -4,7 +4,7 @@ use crate::alloc::string::String;
 use crate::alloc::vec::Vec;
 use crate::decoders::TokenDecodeContext;
 use crate::types::TokenType;
-use crate::vocab::utility::strings::string_from_lossy_utf8;
+use crate::vocab::utility::strings::string_from_utf8_lossy;
 
 /// Trait for token decoders.
 pub trait TokenDecoder<T: TokenType>: Send + Sync {
@@ -100,7 +100,7 @@ pub trait TokenDecoder<T: TokenType>: Send + Sync {
         &self,
         tokens: S,
     ) -> anyhow::Result<String> {
-        Ok(string_from_lossy_utf8(self.try_decode_to_bytes(tokens)?))
+        Ok(string_from_utf8_lossy(self.try_decode_to_bytes(tokens)?))
     }
 
     /// Decodes a batch of tokens into a vector of strings, returning an error if the decoding fails.
@@ -119,7 +119,7 @@ pub trait TokenDecoder<T: TokenType>: Send + Sync {
         self.try_decode_batch_to_bytes(batch).map(|bytes_batch| {
             bytes_batch
                 .into_iter()
-                .map(string_from_lossy_utf8)
+                .map(string_from_utf8_lossy)
                 .collect()
         })
     }

@@ -2,7 +2,7 @@
 
 use crate::decoders::{TokenDecodeContext, TokenDecoder};
 use crate::types::TokenType;
-use crate::vocab::utility::strings::string_from_lossy_utf8;
+use crate::vocab::utility::strings::string_from_utf8_lossy;
 
 /// Batch-Level Parallel Decoder Wrapper.
 ///
@@ -72,7 +72,7 @@ where
             .into_par_iter()
             .map(|tokens| {
                 let buf = self.try_decode_to_bytes(tokens)?;
-                Ok(string_from_lossy_utf8(buf))
+                Ok(string_from_utf8_lossy(buf))
             })
             .collect()
     }

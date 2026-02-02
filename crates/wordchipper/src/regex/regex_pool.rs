@@ -15,11 +15,6 @@ use std::sync::atomic::AtomicUsize;
 use std::thread;
 use std::thread::ThreadId;
 
-fn unsafe_threadid_to_u64(thread_id: &ThreadId) -> u64 {
-    unsafe { std::mem::transmute(thread_id) }
-}
-
-/// Stub
 struct FakeThreadId(NonZeroU64);
 
 fn hash_current_thread() -> usize {
@@ -101,14 +96,8 @@ impl RegexWrapperPool {
 
 impl RegexSupplier for RegexWrapperPool {
     fn get_regex(&self) -> &RegexWrapper {
-        // let tid = hash_current_thread();
-        let id = self
-            .counter
-            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
-                Some((x + 1) % self.pool.len())
-            })
-            .unwrap();
-        &self.pool[id % self.pool.len()]
+        let tid = hash_current_thread();
+        &self.pool[tid % self.pool.len()]
     }
 
     fn get_pattern(&self) -> String {

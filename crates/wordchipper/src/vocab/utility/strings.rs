@@ -5,7 +5,7 @@ use crate::alloc::string::String;
 use crate::alloc::vec::Vec;
 
 /// "stable" stub for for [`String::from_utf8_lossy`].
-pub fn string_from_lossy_utf8(v: Vec<u8>) -> String {
+pub fn string_from_utf8_lossy(v: Vec<u8>) -> String {
     if let Cow::Owned(string) = String::from_utf8_lossy(&v) {
         string
     } else {
@@ -27,11 +27,11 @@ mod tests {
     #[test]
     fn test_string_from_lossy_utf8() {
         let v = vec![0x61, 0x62, 0xff, 0x28];
-        let s = string_from_lossy_utf8(v);
+        let s = string_from_utf8_lossy(v);
         assert_eq!(s, "ab�(".to_string());
 
         let v = vec![0x61, 0x62];
-        let s = string_from_lossy_utf8(v);
+        let s = string_from_utf8_lossy(v);
         assert_eq!(s, "ab".to_string());
     }
 }

@@ -37,40 +37,13 @@ impl<T: TokenType> MergeHeapVocabEncoder<T> {
         Self { data, segmentor }
     }
 
-    /// Compiler Hint.
     #[inline(always)]
-    fn lookup_normal_token(
-        &self,
-        span: &[u8],
-    ) -> Option<T> {
-        self.data.lookup_token(span)
-    }
-
-    /// Compiler Hint.
-    #[inline(always)]
-    fn lookup_pair(
-        &self,
-        pair: &(T, T),
-    ) -> Option<&T> {
-        self.data.lookup_pair(pair)
-    }
-
-    /// Compiler Hint.
-    #[inline(always)]
-    fn append_tokens(
-        &self,
-        span: &[u8],
-        tokens: &mut Vec<T>,
-    ) {
-        self.data.byte_vocab().append_tokens(span, tokens);
-    }
-
     fn encode_append_span_normal(
         &self,
         span: &[u8],
         tokens: &mut Vec<T>,
     ) {
-        if let Some(token) = self.lookup_normal_token(span) {
+        if let Some(token) = self.data.lookup_token(span) {
             // 1. Faster;
             // 2. Correct-or: Some words may not exist in the pair mappings.
             tokens.push(token);
@@ -83,7 +56,7 @@ impl<T: TokenType> MergeHeapVocabEncoder<T> {
 
         // Define CURRENT as `tokens[start..end]`.
         // - CURRENT[i] := tokens[start + i]
-        self.append_tokens(span, tokens);
+        self.data.byte_vocab().append_tokens(span, tokens);
         let mut end = tokens.len();
 
         // Define PAIR_RANKS as `tokens[end..]`
@@ -94,8 +67,8 @@ impl<T: TokenType> MergeHeapVocabEncoder<T> {
         let get_pair_rank = {
             |tok: &mut [T], i: usize| {
                 let pair = &(tok[start + i], tok[start + i + 1]);
-                match self.lookup_pair(pair) {
-                    Some(&token) => token,
+                match self.data.lookup_pair(pair) {
+                    Some(token) => token,
                     None => T::max_value(),
                 }
             }

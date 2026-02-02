@@ -5,7 +5,7 @@ use crate::alloc::vec::Vec;
 use crate::decoders::TokenDecoder;
 use crate::encoders::{DefaultTokenEncoder, TokenEncoder};
 use crate::types::{TokenType, check_is_send, check_is_sync};
-use crate::vocab::utility::strings::string_from_lossy_utf8;
+use crate::vocab::utility::strings::string_from_utf8_lossy;
 use crate::vocab::{TokenVocab, UnifiedTokenVocab};
 
 /// Common Unittest for TokenDecoder implementations.
@@ -32,7 +32,7 @@ pub fn common_decoder_unit_test<T: TokenType, D: TokenDecoder<T>>(
             .try_decode_batch_to_bytes(&token_batch)
             .unwrap()
             .into_iter()
-            .map(string_from_lossy_utf8)
+            .map(string_from_utf8_lossy)
             .collect::<Vec<_>>(),
         &decoded_strings
     );

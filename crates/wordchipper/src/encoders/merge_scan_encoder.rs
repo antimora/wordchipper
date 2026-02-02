@@ -46,7 +46,7 @@ impl<T: TokenType> MergeScanVocabEncoder<T> {
     fn lookup_pair(
         &self,
         pair: &(T, T),
-    ) -> Option<&T> {
+    ) -> Option<T> {
         self.data.lookup_pair(pair)
     }
 
@@ -89,7 +89,7 @@ impl<T: TokenType> MergeScanVocabEncoder<T> {
             if let Some((token, idx)) = tokens[start..]
                 .windows(2)
                 .enumerate()
-                .filter_map(|(idx, w)| self.lookup_pair(&(w[0], w[1])).map(|&token| (token, idx)))
+                .filter_map(|(idx, w)| self.lookup_pair(&(w[0], w[1])).map(|token| (token, idx)))
                 .min()
             {
                 // Adjust the window index.

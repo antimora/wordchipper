@@ -165,7 +165,7 @@ impl<T: TokenType> UnifiedTokenVocab<T> {
     pub fn lookup_pair(
         &self,
         pair: &Pair<T>,
-    ) -> Option<&T> {
+    ) -> Option<T> {
         self.pair_vocab.lookup_pair(pair)
     }
 }
