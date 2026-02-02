@@ -119,6 +119,7 @@ pub mod training;
 #[doc(inline)]
 pub use wordchipper_disk_cache as disk_cache;
 
+mod concurrency;
 pub mod decoders;
 pub mod encoders;
 pub mod regex;

@@ -1,22 +1,24 @@
 //! # Parallel Encoder
 
+use crate::concurrency::pool_toy::PoolToy;
 use crate::encoders::TokenEncoder;
 use crate::segmentation::TextSegmentor;
 use crate::types::TokenType;
 use crate::vocab::special_vocab::SpecialVocab;
+use std::num::NonZeroUsize;
 
 /// Batch-Level Parallel Encoder Wrapper.
 ///
 /// Enables ``rayon`` encoding of batches when available.
 #[derive(Clone)]
-pub struct ParallelRayonEncoder<T: TokenType, D: TokenEncoder<T>> {
-    /// Inner encoder.
-    pub inner: D,
+pub struct PoolEncoder<T: TokenType, D: TokenEncoder<T>> {
+    /// Inner token encoder.
+    pub pool: PoolToy<D>,
 
     _marker: std::marker::PhantomData<T>,
 }
 
-impl<T, D> ParallelRayonEncoder<T, D>
+impl<T, D> PoolEncoder<T, D>
 where
     T: TokenType,
     D: TokenEncoder<T>,
@@ -28,25 +30,29 @@ where
     ///
     /// ## Returns
     /// A new `ParallelRayonEncoder` instance.
-    pub fn new(inner: D) -> Self {
+    pub fn new(
+        inner: D,
+        max_pool: Option<NonZeroUsize>,
+    ) -> Self {
+        let pool = PoolToy::init(inner, max_pool);
         Self {
-            inner,
+            pool,
             _marker: std::marker::PhantomData,
         }
     }
 }
 
-impl<T, D> TokenEncoder<T> for ParallelRayonEncoder<T, D>
+impl<T, D> TokenEncoder<T> for PoolEncoder<T, D>
 where
     T: TokenType,
     D: TokenEncoder<T>,
 {
     fn segmentor(&self) -> &TextSegmentor {
-        self.inner.segmentor()
+        self.pool.get().segmentor()
     }
 
     fn special_vocab(&self) -> &SpecialVocab<T> {
-        self.inner.special_vocab()
+        self.pool.get().special_vocab()
     }
 
     fn try_encode_append(
@@ -54,21 +60,7 @@ where
         text: &str,
         tokens: &mut Vec<T>,
     ) -> anyhow::Result<()> {
-        self.inner.try_encode_append(text, tokens)
-    }
-
-    fn try_encode_batch(
-        &self,
-        batch: &[&str],
-    ) -> anyhow::Result<Vec<Vec<T>>> {
-        use rayon::prelude::*;
-
-        let results: Vec<anyhow::Result<Vec<T>>> = batch
-            .par_iter()
-            .map(|text| self.inner.try_encode(text))
-            .collect();
-
-        results.into_iter().collect()
+        self.pool.get().try_encode_append(text, tokens)
     }
 }
 
@@ -76,7 +68,7 @@ where
 mod tests {
     use crate::encoders::test_utils::{common_encoder_test_vocab, common_encoder_tests};
     use crate::encoders::{DefaultTokenEncoder, TokenEncoder};
-    use crate::rayon::rayon_encoder::ParallelRayonEncoder;
+    use crate::rayon::ParallelRayonEncoder;
     use crate::regex::RegexSupplier;
     use crate::types::TokenType;
 

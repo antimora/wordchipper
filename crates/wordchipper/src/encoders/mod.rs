@@ -28,6 +28,7 @@
 
 pub mod merge_heap_encoder;
 pub mod merge_scan_encoder;
+pub mod pool_encoder;
 pub mod token_encoder;
 
 #[cfg(test)]

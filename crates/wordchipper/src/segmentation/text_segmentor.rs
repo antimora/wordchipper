@@ -3,7 +3,6 @@
 use crate::alloc::string::String;
 use crate::alloc::vec::Vec;
 use crate::regex::exact_match_union::exact_match_union_regex_pattern;
-use crate::regex::regex_pool::RegexWrapperPool;
 use crate::regex::{RegexSupplier, RegexWrapper, RegexWrapperPattern};
 use crate::segmentation::segmentation_config::SegmentationConfig;
 use crate::types::TokenType;
@@ -38,10 +37,10 @@ impl<'a> SpanRef<'a> {
 #[derive(Clone)]
 pub struct TextSegmentor {
     /// Regex for splitting words.
-    pub span_re: RegexWrapperPool,
+    pub span_re: RegexWrapper,
 
     /// Regex for matching special words.
-    pub special_re: Option<RegexWrapperPool>,
+    pub special_re: Option<RegexWrapper>,
 }
 
 impl TextSegmentor {
@@ -101,11 +100,13 @@ impl TextSegmentor {
     /// ## Returns
     /// A new `TextSegmentor` instance.
     pub fn new(
-        span_r: RegexWrapper,
+        span_re: RegexWrapper,
         special_re: Option<RegexWrapper>,
     ) -> Self {
+        /*
         let span_re = RegexWrapperPool::from(span_r);
         let special_re = special_re.map(RegexWrapperPool::from);
+         */
 
         Self {
             span_re,

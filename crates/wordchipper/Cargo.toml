@@ -26,7 +26,7 @@ unroll_split_spans = []
 
 # Features for typical client usage.
 client = [
-    # debug "ahash",
+    "ahash",
     "download",
     "rayon",
     "std",

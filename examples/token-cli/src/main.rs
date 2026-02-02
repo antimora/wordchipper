@@ -1,6 +1,7 @@
 use arrow::array::StringArray;
 use clap::Parser;
 use similar::{ChangeTag, TextDiff};
+use std::num::NonZeroUsize;
 use std::time::Duration;
 use wordchipper::decoders::{DictionaryDecoder, TokenDecoder};
 use wordchipper::disk_cache::WordchipperDiskCache;
@@ -45,14 +46,9 @@ pub struct Args {
     #[arg(long, default_value = "false")]
     pub verbose: bool,
 
-    #[command(subcommand)]
-    pub command: Option<Command>,
-}
-
-#[derive(Parser, Debug)]
-pub enum Command {
-    /// Load a tokenizer.
-    Load {},
+    /// Pool Size
+    #[arg(long)]
+    pub pool_size: Option<NonZeroUsize>,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -61,18 +57,13 @@ fn main() -> anyhow::Result<()> {
         println!("{:#?}", args);
     }
 
-    match &args.command {
-        Some(Command::Load { .. }) => {
-            run_load(&args)?;
-        }
-        None => unreachable!(),
-    }
+    run(&args)?;
 
     Ok(())
 }
 
 #[allow(unused)]
-fn run_load(args: &Args) -> anyhow::Result<()> {
+fn run(args: &Args) -> anyhow::Result<()> {
     type T = u32;
 
     let mut dataset_cache = DatasetCacheConfig::new()
@@ -86,7 +77,9 @@ fn run_load(args: &Args) -> anyhow::Result<()> {
 
     let encoder = MergeHeapVocabEncoder::<T>::init(vocab.clone());
     #[cfg(feature = "parallel")]
-    let encoder = wordchipper::rayon::ParallelRayonEncoder::new(encoder);
+    let encoder = wordchipper::rayon::ParallelRayonEncoder::new(
+        wordchipper::encoders::pool_encoder::PoolEncoder::new(encoder, args.pool_size),
+    );
 
     let decoder = DictionaryDecoder::from_unified_vocab(vocab.clone());
     #[cfg(feature = "parallel")]

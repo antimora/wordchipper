@@ -11,7 +11,7 @@ use crate::vocab::special_vocab::SpecialVocab;
 pub type TokenEncoderHandle<T> = Arc<dyn TokenEncoder<T>>;
 
 /// A trait for token encoders.
-pub trait TokenEncoder<T: TokenType>: Send + Sync {
+pub trait TokenEncoder<T: TokenType>: Clone + Send + Sync {
     /// Return the attached text segmentor.
     fn segmentor(&self) -> &TextSegmentor;
 
