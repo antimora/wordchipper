@@ -21,9 +21,6 @@ default = [
     "client",
 ]
 
-# Debug/Speed Hack.
-unroll_split_spans = []
-
 # Features for typical client usage.
 client = [
     "ahash",

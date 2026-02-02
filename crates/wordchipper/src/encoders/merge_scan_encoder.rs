@@ -130,11 +130,13 @@ impl<T: TokenType> TokenEncoder<T> for MergeScanVocabEncoder<T> {
             .split_spans(text)
             .into_iter()
             .for_each(|span_ref| match span_ref {
-                SpanRef::Normal(span_str) => {
-                    self.encode_append_span_normal(span_str.as_bytes(), tokens)
+                SpanRef::Normal(range) => {
+                    let span = &text[range].as_bytes();
+                    self.encode_append_span_normal(span, tokens)
                 }
-                SpanRef::Special(s) => {
-                    tokens.push(self.special_vocab().lookup_token(s.as_bytes()).unwrap());
+                SpanRef::Special(range) => {
+                    let span = &text[range].as_bytes();
+                    tokens.push(self.special_vocab().lookup_token(span).unwrap());
                 }
             });
 

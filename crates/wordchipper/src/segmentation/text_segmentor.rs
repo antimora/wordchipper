@@ -12,24 +12,30 @@ use core::ops::Range;
 
 /// Word Reference for [`TextSegmentor`].
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub enum SpanRef<'a> {
+pub enum SpanRef {
     /// A normal word reference.
-    Normal(&'a str),
+    Normal(Range<usize>),
 
     /// A special word reference.
-    Special(&'a str),
+    Special(Range<usize>),
 }
 
-impl<'a> SpanRef<'a> {
-    /// Get the inner string slice.
-    ///
-    /// ## Returns
-    /// The string slice.
-    pub fn as_str(&self) -> &'a str {
-        match self {
-            SpanRef::Normal(s) => s,
-            SpanRef::Special(s) => s,
+impl From<SpanRef> for Range<usize> {
+    fn from(span: SpanRef) -> Self {
+        match span {
+            SpanRef::Normal(range) => range,
+            SpanRef::Special(range) => range,
         }
+    }
+}
+
+fn offset_range(
+    range: Range<usize>,
+    offset: usize,
+) -> Range<usize> {
+    Range {
+        start: range.start + offset,
+        end: range.end + offset,
     }
 }
 
@@ -153,16 +159,17 @@ impl TextSegmentor {
     /// ## Arguments
     /// * `text` - The text to split.
     /// * `words` - The target buffer to append to.
-    fn split_append_normal_words<'a>(
+    fn split_append_normal_words(
         &self,
-        text: &'a str,
-        words: &mut Vec<SpanRef<'a>>,
+        text: &str,
+        offset: usize,
+        words: &mut Vec<SpanRef>,
     ) {
         words.extend(
             self.span_re
                 .get_regex()
                 .find_iter(text)
-                .map(|m| SpanRef::Normal(m.as_str())),
+                .map(|m| SpanRef::Normal(offset_range(m.range(), offset))),
         )
     }
 
@@ -171,24 +178,26 @@ impl TextSegmentor {
     /// ## Arguments
     /// * `text` - The text to split.
     /// * `words` - The target buffer to append to.
-    pub fn split_append_spans<'a>(
+    pub fn split_append_spans(
         &self,
-        text: &'a str,
-        words: &mut Vec<SpanRef<'a>>,
+        text: &str,
+        words: &mut Vec<SpanRef>,
     ) {
         let mut current = text;
+        let mut offset = 0;
 
         while let Some(range) = self.next_special_span(current) {
             let pre = &current[..range.start];
-            self.split_append_normal_words(pre, words);
+            self.split_append_normal_words(pre, offset, words);
 
-            words.push(SpanRef::Special(&current[range.clone()]));
+            words.push(SpanRef::Special(offset_range(range.clone(), offset)));
 
             current = &current[range.end..];
+            offset += range.end;
         }
 
         if !current.is_empty() {
-            self.split_append_normal_words(current, words);
+            self.split_append_normal_words(current, offset, words);
         }
     }
 
@@ -199,11 +208,11 @@ impl TextSegmentor {
     ///
     /// ## Returns
     /// A vector of `SpanRef` items.
-    pub fn split_spans<'a>(
+    pub fn split_spans(
         &self,
-        text: &'a str,
-    ) -> Vec<SpanRef<'a>> {
-        let capacity = text.len() as f64 / (EXPECTED_BYTES_PER_TOKEN * 0.5);
+        text: &str,
+    ) -> Vec<SpanRef> {
+        let capacity = text.len() as f64 / (EXPECTED_BYTES_PER_TOKEN * 0.8);
         let mut words = Vec::with_capacity(capacity as usize);
 
         self.split_append_spans(text, &mut words);
@@ -224,7 +233,10 @@ impl TextSegmentor {
         let text = text.as_ref();
         let mut words = Vec::new();
         self.split_append_spans(text, &mut words);
-        words.into_iter().map(|w| w.as_str()).collect()
+        words
+            .into_iter()
+            .map(|w| &text[Range::<usize>::from(w)])
+            .collect()
     }
 }
 
@@ -233,16 +245,6 @@ mod tests {
     use super::*;
     use crate::alloc::vec;
     use crate::vocab::public::openai::patterns::OA_GPT3_CL100K_WORD_PATTERN;
-
-    #[test]
-    fn test_span_ref() {
-        let buf = "hello world!";
-        let n_ref = SpanRef::Normal(&buf[..5]);
-        let s_ref = SpanRef::Special(&buf[6..11]);
-
-        assert_eq!(n_ref.as_str(), "hello");
-        assert_eq!(s_ref.as_str(), "world");
-    }
 
     #[test]
     fn test_split_words() {
@@ -259,12 +261,12 @@ mod tests {
         assert_eq!(
             &segmentor.split_spans(buf),
             &vec![
-                SpanRef::Normal(&buf[..5]),
-                SpanRef::Special(&buf[5..14]),
-                SpanRef::Normal(&buf[14..18]),
-                SpanRef::Special(&buf[18..26]),
-                SpanRef::Normal(&buf[26..28]),
-                SpanRef::Normal(&buf[28..]),
+                SpanRef::Normal(0..5),
+                SpanRef::Special(5..14),
+                SpanRef::Normal(14..18),
+                SpanRef::Special(18..26),
+                SpanRef::Normal(26..28),
+                SpanRef::Normal(28..buf.len()),
             ]
         );
     }

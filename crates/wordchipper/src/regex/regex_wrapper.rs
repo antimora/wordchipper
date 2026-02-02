@@ -11,21 +11,21 @@ use core::fmt::Debug;
 #[derive(Clone, Debug)]
 pub enum ErrorWrapper {
     /// Error from `regex`.
-    Basic(regex::Error),
+    Basic(Box<regex::Error>),
 
     /// Error from `fancy_regex`.
-    Fancy(fancy_regex::Error),
+    Fancy(Box<fancy_regex::Error>),
 }
 
 impl From<regex::Error> for ErrorWrapper {
     fn from(err: regex::Error) -> Self {
-        Self::Basic(err)
+        Self::Basic(err.into())
     }
 }
 
 impl From<fancy_regex::Error> for ErrorWrapper {
     fn from(err: fancy_regex::Error) -> Self {
-        Self::Fancy(err)
+        Self::Fancy(err.into())
     }
 }
 
