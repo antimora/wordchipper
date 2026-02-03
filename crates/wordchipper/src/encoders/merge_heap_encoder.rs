@@ -18,14 +18,14 @@ use core::num::NonZeroUsize;
 #[derive(Clone)]
 pub struct MergeHeapVocabEncoder<T: TokenType> {
     /// Data for the encoders.
-    data: UnifiedTokenVocab<T>,
+    pub data: UnifiedTokenVocab<T>,
 
     /// Text Segmentor.
-    segmentor: TextSegmentor,
+    pub segmentor: TextSegmentor,
 }
 
 impl<T: TokenType> MergeHeapVocabEncoder<T> {
-    /// Construct an encoder from data.
+    /// Intialize an encoder.
     ///
     /// ## Arguments
     /// * `data` - The unified token vocabulary to build the encoder from.

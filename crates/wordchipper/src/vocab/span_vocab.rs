@@ -142,16 +142,6 @@ impl<T: TokenType> SpanMapVocab<T> {
         })
     }
 
-    /// Get the byte/token mapping table.
-    pub fn byte_vocab(&self) -> &ByteMapVocab<T> {
-        &self.byte_vocab
-    }
-
-    /// Get the span => token map.
-    pub fn span_map(&self) -> &SpanTokenMap<T> {
-        &self.span_map
-    }
-
     /// The number of words in the vocabulary.
     #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
@@ -251,7 +241,7 @@ mod tests {
         assert_eq!(vocab.max_token(), byte_vocab.max_token());
         assert_eq!(&vocab.sorted_tokens(), &byte_vocab.sorted_tokens());
 
-        let mut span_map = vocab.span_map().clone();
+        let mut span_map = vocab.span_map.clone();
 
         span_map.insert("apple".as_bytes().to_vec(), 300);
         span_map.insert("banana".as_bytes().to_vec(), 301);

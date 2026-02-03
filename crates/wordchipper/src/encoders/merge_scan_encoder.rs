@@ -22,7 +22,7 @@ pub struct MergeScanVocabEncoder<T: TokenType> {
 }
 
 impl<T: TokenType> MergeScanVocabEncoder<T> {
-    /// Construct an encoder from data.
+    /// Initialize an encoder.
     ///
     /// ## Arguments
     /// * `data` - The unified token vocabulary to build the encoder from.

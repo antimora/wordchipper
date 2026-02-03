@@ -179,6 +179,7 @@ impl<T: TokenType> ByteMapVocab<T> {
     ///
     /// ## Returns
     /// An `Option` containing the byte value if it exists in the mapping.
+    #[inline(always)]
     pub fn get_byte(
         &self,
         token: T,

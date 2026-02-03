@@ -72,7 +72,7 @@ impl<T: TokenType> UnifiedTokenVocab<T> {
         span_vocab: SpanMapVocab<T>,
         pair_vocab: PairMapVocab<T>,
     ) -> Self {
-        assert_eq!(span_vocab.byte_vocab(), pair_vocab.byte_vocab());
+        assert_eq!(&span_vocab.byte_vocab, &pair_vocab.byte_vocab);
 
         let tokens = span_vocab.unordered_tokens().collect::<CommonHashSet<_>>();
         for ((a, b), c) in pair_vocab.pairs() {
@@ -99,7 +99,7 @@ impl<T: TokenType> UnifiedTokenVocab<T> {
 
     /// Get the byte table for the word vocabulary.
     pub fn byte_vocab(&self) -> &ByteMapVocab<T> {
-        self.span_vocab.byte_vocab()
+        &self.span_vocab.byte_vocab
     }
 
     /// Get a reference to the [`SpecialVocab`]
