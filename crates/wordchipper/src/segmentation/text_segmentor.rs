@@ -2,6 +2,7 @@
 
 use crate::alloc::string::String;
 use crate::alloc::vec::Vec;
+use crate::compat::ranges::offset_range;
 use crate::regex::exact_match_union::exact_match_union_regex_pattern;
 use crate::regex::{RegexWrapper, RegexWrapperPattern};
 use crate::segmentation::segmentation_config::SegmentationConfig;
@@ -31,16 +32,6 @@ impl From<SpanRef> for Range<usize> {
             SpanRef::Special(range) => range,
             SpanRef::Gap(range) => range,
         }
-    }
-}
-
-fn offset_range(
-    range: Range<usize>,
-    offset: usize,
-) -> Range<usize> {
-    Range {
-        start: range.start + offset,
-        end: range.end + offset,
     }
 }
 
@@ -184,64 +175,106 @@ impl TextSegmentor {
         }
     }
 
-    /// Split a chunk of text into [`SpanRef::Word`], appending to the `words` buffer.
+    /// Iterate over all split [`SpanRef`]s in the text.
     ///
-    /// ## Arguments
-    /// * `text` - The text to split.
-    /// * `words` - The target buffer to append to.
-    fn split_append_words(
+    /// # Arguments
+    /// * `text` - the text to split.
+    /// * `f` - the function to apply to each span;
+    ///   halts when the function returns `false`.
+    ///
+    /// Note: a byte is consumed *only if* the function returns `true`;
+    /// if the function returns `false`, the byte is not consumed.
+    ///
+    /// # Returns
+    /// ``(completed, consumed)`` where:
+    /// - `consumed` is the number of bytes covered by spans accepted by `f`;
+    /// - `completed` is if all spans were accepted.
+    pub fn for_each_split<F>(
         &self,
         text: &str,
-        offset: usize,
-        words: &mut Vec<SpanRef>,
-    ) -> usize {
-        let mut last = 0;
-        for m in self.word_regex().find_iter(text) {
-            let match_range = m.range();
-            if last < match_range.start {
-                words.push(SpanRef::Gap(last..match_range.start));
-            }
-
-            last = match_range.end;
-            words.push(SpanRef::Word(offset_range(match_range, offset)));
-        }
-        last
-    }
-
-    /// Split a chunk of text into spans, appending to the `words` buffer.
-    ///
-    /// ## Arguments
-    /// * `text` - The text to split.
-    /// * `words` - The target buffer to append to.
-    pub fn split_append_spans(
-        &self,
-        text: &str,
-        words: &mut Vec<SpanRef>,
-    ) {
+        f: &mut F,
+    ) -> (bool, usize)
+    where
+        F: FnMut(SpanRef) -> bool,
+    {
         let mut current = text;
         let mut offset = 0;
 
         while let Some(range) = self.next_special_span(current) {
-            let pre = &current[..range.start];
-            let last = self.split_append_words(pre, offset, words);
+            let Range { start, end } = range;
+            let pre = &current[..start];
 
-            if last < range.start {
-                words.push(SpanRef::Gap(offset_range(last..range.start, offset)));
+            let (cont, used) = self.for_each_word(pre, offset, f);
+            if !cont {
+                return (false, offset + used);
             }
 
-            words.push(SpanRef::Special(offset_range(range.clone(), offset)));
+            // we've consumed `offset + used` bytes at this point.
 
-            current = &current[range.end..];
-            offset += range.end;
+            if used < range.start && !f(SpanRef::Gap(offset_range::<usize>(used..start, offset))) {
+                return (false, offset + used);
+            }
+
+            // we've consumed `offset + start` bytes at this point.
+
+            if !f(SpanRef::Special(offset_range::<usize>(range, offset))) {
+                return (false, offset + start);
+            }
+
+            // we've consumed `offset + end` bytes at this point.
+
+            current = &current[end..];
+            offset += end;
         }
 
         if !current.is_empty() {
-            let last = self.split_append_words(current, offset, words);
+            let (cont, used) = self.for_each_word(current, offset, f);
+            if !cont {
+                return (false, offset + used);
+            }
 
-            if last < current.len() {
-                words.push(SpanRef::Gap(offset_range(last..current.len(), offset)));
+            // we've consumed `offset + used` bytes at this point.
+
+            if used < current.len()
+                && !f(SpanRef::Gap(offset_range::<usize>(
+                    used..current.len(),
+                    offset,
+                )))
+            {
+                return (false, offset + used);
             }
         }
+        (true, text.len())
+    }
+
+    fn for_each_word<F>(
+        &self,
+        text: &str,
+        offset: usize,
+        f: &mut F,
+    ) -> (bool, usize)
+    where
+        F: FnMut(SpanRef) -> bool,
+    {
+        let mut last = 0;
+        for m in self.word_regex().find_iter(text) {
+            let range = m.range();
+            let Range { start, end } = range;
+
+            if last < start {
+                if !f(SpanRef::Gap(last..start)) {
+                    return (false, last);
+                }
+                last = start;
+            }
+
+            if !f(SpanRef::Word(offset_range::<usize>(range, offset))) {
+                return (false, last);
+            }
+            last = end;
+        }
+
+        (true, last)
     }
 
     /// Split text into spans.
@@ -258,7 +291,11 @@ impl TextSegmentor {
         let capacity = text.len() as f64 / (EXPECTED_BYTES_PER_TOKEN * 0.8);
         let mut words = Vec::with_capacity(capacity as usize);
 
-        self.split_append_spans(text, &mut words);
+        self.for_each_split(text, &mut |span_ref| {
+            words.push(span_ref);
+            true
+        });
+
         words
     }
 
@@ -274,12 +311,12 @@ impl TextSegmentor {
         text: S,
     ) -> String {
         let text = text.as_ref();
-        let mut words = Vec::new();
-        self.split_append_spans(text, &mut words);
-        words
+        self.split_spans(text)
             .into_iter()
-            .filter(|m| !matches!(m, SpanRef::Gap(_)))
-            .map(|w| &text[Range::<usize>::from(w)])
+            .filter_map(|m| match m {
+                SpanRef::Gap(_) => None,
+                _ => Some(&text[Range::<usize>::from(m)]),
+            })
             .collect()
     }
 
