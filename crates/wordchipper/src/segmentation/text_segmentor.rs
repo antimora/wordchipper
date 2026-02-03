@@ -182,6 +182,9 @@ impl TextSegmentor {
     /// * `f` - the function to apply to each span;
     ///   halts when the function returns `false`.
     ///
+    /// Note: a byte is consumed *only if* the function returns `true`;
+    /// if the function returns `false`, the byte is not consumed.
+    ///
     /// # Returns
     /// ``(completed, consumed)`` where:
     /// - `consumed` is the number of bytes covered by spans accepted by `f`;
