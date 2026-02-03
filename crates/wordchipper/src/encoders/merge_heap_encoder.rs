@@ -142,10 +142,9 @@ impl<T: TokenType> TokenEncoder<T> for MergeHeapVocabEncoder<T> {
         tokens: &mut Vec<T>,
     ) -> anyhow::Result<()> {
         let mut pair_vec = Vec::with_capacity(16);
-        self.segmentor()
-            .split_spans(text)
-            .into_iter()
-            .for_each(|span_ref| match span_ref {
+
+        self.segmentor().for_each_split(text, &mut |span_ref| {
+            match span_ref {
                 SpanRef::Gap(_) => (),
                 SpanRef::Word(range) => {
                     let span = &text[range].as_bytes();
@@ -165,7 +164,9 @@ impl<T: TokenType> TokenEncoder<T> for MergeHeapVocabEncoder<T> {
                     let special_token = self.special_vocab().lookup_token(span).unwrap();
                     tokens.push(special_token);
                 }
-            });
+            }
+            true
+        });
 
         Ok(())
     }
