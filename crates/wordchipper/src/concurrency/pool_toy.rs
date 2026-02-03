@@ -103,3 +103,23 @@ where
             .finish()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pool_toy() {
+        let pool = PoolToy::init(10, Some(NonZeroUsize::new(128).unwrap()));
+        assert_eq!(pool.len(), 12);
+        assert_eq!(&pool.pool, vec![10; 12].as_slice());
+
+        assert_eq!(pool.get(), &10);
+        assert_eq!(pool.as_ref(), &10);
+
+        assert_eq!(format!("{:?}", pool), "PoolToy { item: 10, len: 12 }");
+
+        let clone = pool.clone();
+        assert_eq!(&clone.pool, &pool.pool);
+    }
+}
