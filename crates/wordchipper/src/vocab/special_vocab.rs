@@ -11,12 +11,12 @@ use crate::vocab::TokenVocab;
 pub struct SpecialVocab<T: TokenType> {
     /// The regex pattern used for text spl
     /// Map of ``{ Vec<u8> -> T }``.
-    span_map: SpanTokenMap<T>,
+    pub span_map: SpanTokenMap<T>,
 }
 
 impl<T: TokenType> From<SpanTokenMap<T>> for SpecialVocab<T> {
     fn from(span_map: SpanTokenMap<T>) -> Self {
-        Self::new(span_map)
+        Self::from_map(span_map)
     }
 }
 
@@ -28,7 +28,7 @@ impl<T: TokenType> SpecialVocab<T> {
     ///
     /// ## Returns
     /// A new `SpecialVocab` instance.
-    pub fn new(span_map: SpanTokenMap<T>) -> Self {
+    pub fn from_map(span_map: SpanTokenMap<T>) -> Self {
         Self { span_map }
     }
 
@@ -46,14 +46,6 @@ impl<T: TokenType> SpecialVocab<T> {
     /// `true` if the special vocabulary is empty, `false` otherwise.
     pub fn is_empty(&self) -> bool {
         self.span_map.is_empty()
-    }
-
-    /// Get the span => token map.
-    ///
-    /// ## Returns
-    /// A reference to the internal `SpanTokenMap`.
-    pub fn span_map(&self) -> &SpanTokenMap<T> {
-        &self.span_map
     }
 
     /// Add a word to the vocab.
@@ -134,11 +126,11 @@ mod tests {
         assert!(!vocab.is_empty());
 
         assert_eq!(
-            vocab.span_map(),
+            &vocab.span_map,
             &[("hello".as_bytes().to_vec(), 1)].into_iter().collect()
         );
 
-        let rebuild: SpecialVocab<T> = vocab.span_map().clone().into();
+        let rebuild: SpecialVocab<T> = vocab.span_map.clone().into();
         assert_eq!(rebuild, vocab);
     }
 }

@@ -85,11 +85,6 @@ impl<T: TokenType> PairMapVocab<T> {
         })
     }
 
-    /// Get the byte/token mapping table.
-    pub fn byte_vocab(&self) -> &ByteMapVocab<T> {
-        &self.byte_vocab
-    }
-
     /// Get the map of pairs.
     pub fn pairs(&self) -> &PairTokenMap<T> {
         &self.pair_map

@@ -81,7 +81,7 @@
 //!         .expect("training failed");
 //!
 //!     if let Some(path) = tiktoken_save_path {
-//!         save_tiktoken_vocab_path(&vocab.span_vocab.span_map(), &path)
+//!         save_tiktoken_vocab_path(&vocab.span_vocab.span_map, &path)
 //!             .expect("failed to save tiktoken vocab");
 //!         println!("- tiktoken vocab: {path:?}");
 //!     }

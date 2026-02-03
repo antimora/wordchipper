@@ -124,7 +124,7 @@ fn main() -> anyhow::Result<()> {
     println!("- vocab_size: {:?}", vocab.max_token());
 
     if let Some(path) = args.tiktoken_save_path {
-        save_tiktoken_vocab_path(vocab.span_vocab.span_map(), &path)?;
+        save_tiktoken_vocab_path(&vocab.span_vocab.span_map, &path)?;
         println!("- tiktoken vocab: {path:?}");
     }
 

@@ -114,7 +114,7 @@ impl TextSegmentor {
             Some(exact_match_union_regex_pattern(specials).compile().unwrap())
         };
 
-        Self::new(span_re, special_re, max_pool)
+        Self::init(span_re, special_re, max_pool)
     }
 
     /// Create a new text segmentor with the given regex suppliers.
@@ -126,7 +126,7 @@ impl TextSegmentor {
     ///
     /// ## Returns
     /// A new `TextSegmentor` instance.
-    pub fn new(
+    pub fn init(
         word_re: RegexWrapper,
         special_re: Option<RegexWrapper>,
         max_pool: Option<NonZeroUsize>,

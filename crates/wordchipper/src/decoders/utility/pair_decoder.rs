@@ -5,36 +5,17 @@ use crate::decoders::token_decoder::TokenDecoder;
 use crate::types::{TokenToPairMap, TokenType};
 use crate::vocab::{ByteMapVocab, PairMapVocab};
 
-/// A Pair Expansion ``{ T -> (T, T) }``  [`TokenDecoder`].
+/// A [`TokenDecoder`] based on a token expansion map ``{ T -> (T, T) }``.
 #[derive(Clone)]
 pub struct PairExpansionDecoder<T: TokenType> {
     /// Byte/token mapping table.
-    byte_vocab: ByteMapVocab<T>,
+    pub byte_vocab: ByteMapVocab<T>,
 
     /// Token to pair mapping.
-    token_map: TokenToPairMap<T>,
+    pub token_map: TokenToPairMap<T>,
 }
 
 impl<T: TokenType> PairExpansionDecoder<T> {
-    /// Creates a new Decoder.
-    ///
-    /// ## Arguments
-    /// * `byte_vocab` - The byte vocabulary mapping.
-    /// * `token_map` - The token to pair mapping.
-    ///
-    /// ## Returns
-    /// A new `PairExpansionDecoder` instance.
-    pub fn new(
-        byte_vocab: ByteMapVocab<T>,
-        token_map: TokenToPairMap<T>,
-    ) -> Self
-where {
-        Self {
-            byte_vocab,
-            token_map,
-        }
-    }
-
     /// Build a [`PairExpansionDecoder`] from this [`PairMapVocab`].
     ///
     /// ## Arguments
@@ -48,12 +29,25 @@ where {
             .iter()
             .map(|(&pair, &token)| (token, pair))
             .collect();
-        Self::new(pair_vocab.byte_vocab().clone(), token_map)
+        Self::init(pair_vocab.byte_vocab.clone(), token_map)
     }
 
-    /// Get the byte table.
-    pub fn byte_vocab(&self) -> &ByteMapVocab<T> {
-        &self.byte_vocab
+    /// Creates a new Decoder.
+    ///
+    /// ## Arguments
+    /// * `byte_vocab` - The byte vocabulary mapping.
+    /// * `token_map` - The token to pair mapping.
+    ///
+    /// ## Returns
+    /// A new `PairExpansionDecoder` instance.
+    pub fn init(
+        byte_vocab: ByteMapVocab<T>,
+        token_map: TokenToPairMap<T>,
+    ) -> Self {
+        Self {
+            byte_vocab,
+            token_map,
+        }
     }
 }
 
@@ -99,7 +93,7 @@ mod tests {
 
         let decoder = PairExpansionDecoder::from_pair_vocab(&vocab.pair_vocab);
 
-        assert_eq!(decoder.byte_vocab(), vocab.byte_vocab());
+        assert_eq!(&decoder.byte_vocab, vocab.byte_vocab());
 
         common_decoder_unit_test(vocab, &decoder);
     }

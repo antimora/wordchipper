@@ -6,10 +6,20 @@ use crate::decoders::{TokenDecodeContext, TokenDecoder};
 use crate::types::TokenType;
 use crate::vocab::byte_vocab::ByteMapVocab;
 
-/// A decoders that only decodes byte tokens.
+/// A [`ByteMapVocab`] based [`TokenDecoder`].
+///
+/// Can only decode the byte tokens,
+/// useful primarily for testing.
 #[derive(Clone, Default)]
 pub struct ByteDecoder<T: TokenType> {
-    byte_vocab: ByteMapVocab<T>,
+    /// The byte vocabulary mapping.
+    pub byte_vocab: ByteMapVocab<T>,
+}
+
+impl<T: TokenType> From<ByteMapVocab<T>> for ByteDecoder<T> {
+    fn from(byte_vocab: ByteMapVocab<T>) -> Self {
+        Self::init(byte_vocab)
+    }
 }
 
 impl<T: TokenType> ByteDecoder<T> {
@@ -20,16 +30,8 @@ impl<T: TokenType> ByteDecoder<T> {
     ///
     /// ## Returns
     /// A new `ByteDecoder` instance.
-    pub fn new(byte_vocab: ByteMapVocab<T>) -> Self {
+    pub fn init(byte_vocab: ByteMapVocab<T>) -> Self {
         Self { byte_vocab }
-    }
-
-    /// Get the byte table.
-    ///
-    /// ## Returns
-    /// A reference to the internal `ByteMapVocab`.
-    pub fn byte_vocab(&self) -> &ByteMapVocab<T> {
-        &self.byte_vocab
     }
 }
 
@@ -59,14 +61,14 @@ mod tests {
     #[test]
     fn test_decode_context() {
         type T = u32;
-        let decoder: ByteDecoder<T> = ByteDecoder::new(ByteMapVocab::default());
+        let decoder: ByteDecoder<T> = ByteDecoder::init(ByteMapVocab::default());
 
         let mut tokens = vec![];
         tokens.extend(
             "hello world"
                 .as_bytes()
                 .iter()
-                .map(|&b| decoder.byte_vocab().get_token(b)),
+                .map(|&b| decoder.byte_vocab.get_token(b)),
         );
         tokens.extend_from_slice(&[256, 3000]);
 
