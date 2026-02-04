@@ -1,7 +1,7 @@
 //! # Parallel Decoder
 
-use crate::compat::strings::string_from_utf8_lossy;
-use crate::decoders::{TokenDecodeContext, TokenDecoder};
+use crate::decoders::TokenDecoder;
+use crate::decoders::token_decoder::{BatchDecodeResult, DecodeResult};
 use crate::types::TokenType;
 
 /// Batch-Level Parallel Decoder Wrapper.
@@ -40,41 +40,37 @@ where
     T: TokenType,
     D: TokenDecoder<T>,
 {
-    fn incremental_decode(
+    fn try_decode_to_bytes(
         &self,
-        ctx: &mut TokenDecodeContext<T>,
-    ) -> bool {
-        self.inner.incremental_decode(ctx)
+        tokens: &[T],
+    ) -> anyhow::Result<DecodeResult<Vec<u8>>> {
+        self.inner.try_decode_to_bytes(tokens)
     }
 
-    fn try_decode_batch_to_bytes<V: AsRef<[T]>>(
+    fn try_decode_batch_to_bytes(
         &self,
-        batch: &[V],
-    ) -> anyhow::Result<Vec<Vec<u8>>> {
+        batch: &[&[T]],
+    ) -> anyhow::Result<BatchDecodeResult<Vec<u8>>> {
         use rayon::prelude::*;
-        let batch: Vec<&[T]> = batch.iter().map(|v| v.as_ref()).collect();
 
         batch
-            .into_par_iter()
+            .par_iter()
             .map(|tokens| self.try_decode_to_bytes(tokens))
-            .collect()
+            .collect::<anyhow::Result<Vec<_>>>()
+            .map(BatchDecodeResult::from)
     }
 
-    fn try_decode_batch_to_strings<V: AsRef<[T]>>(
+    fn try_decode_batch_to_strings(
         &self,
-        batch: &[V],
-    ) -> anyhow::Result<Vec<String>> {
+        batch: &[&[T]],
+    ) -> anyhow::Result<BatchDecodeResult<String>> {
         use rayon::prelude::*;
 
-        let batch: Vec<&[T]> = batch.iter().map(|v| v.as_ref()).collect();
-
         batch
-            .into_par_iter()
-            .map(|tokens| {
-                let buf = self.try_decode_to_bytes(tokens)?;
-                Ok(string_from_utf8_lossy(buf))
-            })
-            .collect()
+            .par_iter()
+            .map(|tokens| self.try_decode_to_string(tokens))
+            .collect::<anyhow::Result<Vec<_>>>()
+            .map(BatchDecodeResult::from)
     }
 }
 

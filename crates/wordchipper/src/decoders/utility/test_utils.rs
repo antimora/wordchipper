@@ -25,11 +25,25 @@ pub fn common_decoder_unit_test<T: TokenType, D: TokenDecoder<T>>(
     let encoder = DefaultTokenEncoder::<T>::init(vocab.clone(), None);
 
     let token_batch = encoder.try_encode_batch(&samples).unwrap();
-    let decoded_strings = decoder.try_decode_batch_to_strings(&token_batch).unwrap();
+    let decoded_strings = decoder
+        .try_decode_batch_to_strings(
+            &token_batch
+                .iter()
+                .map(|v| v.as_ref())
+                .collect::<Vec<&[T]>>(),
+        )
+        .unwrap()
+        .unwrap();
 
     assert_eq!(
         &decoder
-            .try_decode_batch_to_bytes(&token_batch)
+            .try_decode_batch_to_bytes(
+                &token_batch
+                    .iter()
+                    .map(|v| v.as_ref())
+                    .collect::<Vec<&[T]>>()
+            )
+            .unwrap()
             .unwrap()
             .into_iter()
             .map(string_from_utf8_lossy)
@@ -54,17 +68,21 @@ pub fn common_decoder_unit_test<T: TokenType, D: TokenDecoder<T>>(
         .collect::<Vec<_>>();
 
     let partial_decode = decoder
-        .try_decode_batch_to_context(&partial_tokens)
+        .try_decode_batch_to_bytes(
+            &partial_tokens
+                .iter()
+                .map(|v| v.as_ref())
+                .collect::<Vec<&[T]>>(),
+        )
         .unwrap();
 
     let mut expected_stack = broken_tail.clone();
     expected_stack.reverse();
 
     for (idx, sample) in samples.iter().enumerate() {
-        let ctx = partial_decode.get(idx).unwrap();
-
+        let ctx = &partial_decode.results[idx];
         assert!(!ctx.is_complete());
-        assert_eq!(ctx.buf, sample.as_bytes().to_vec());
-        assert_eq!(&ctx.stack, &expected_stack);
+        assert_eq!(ctx.value, sample.as_bytes().to_vec());
+        assert_eq!(ctx.remaining, Some(expected_stack.len()));
     }
 }

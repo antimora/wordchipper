@@ -1,9 +1,9 @@
 //! # Dictionary ``{ T -> Vec<u8> }`` Token Decoder
 
-use crate::decoders::decode_context::TokenDecodeContext;
-use crate::decoders::token_decoder::TokenDecoder;
+use crate::decoders::token_decoder::{DecodeResult, TokenDecoder};
 use crate::types::TokenType;
 use crate::vocab::UnifiedTokenVocab;
+use crate::vocab::size_hints::EXPECTED_BYTES_PER_TOKEN;
 use crate::vocab::vocab_types::TokenSpanMap;
 
 /// A token dictionary [`TokenDecoder<T>`].
@@ -40,20 +40,23 @@ impl<T: TokenType> DictionaryDecoder<T> {
 }
 
 impl<T: TokenType> TokenDecoder<T> for DictionaryDecoder<T> {
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip(self, ctx)))]
-    fn incremental_decode(
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip(self, tokens)))]
+    fn try_decode_to_bytes(
         &self,
-        ctx: &mut TokenDecodeContext<T>,
-    ) -> bool {
-        while let Some(t) = ctx.stack.pop() {
-            if let Some(w) = self.token_to_word.get(&t) {
-                ctx.buf.extend_from_slice(w.as_slice());
+        tokens: &[T],
+    ) -> anyhow::Result<DecodeResult<Vec<u8>>> {
+        let capacity = (tokens.len() as f64 * EXPECTED_BYTES_PER_TOKEN) as usize;
+        let mut value = Vec::with_capacity(capacity);
+        let mut consumed = 0;
+        for t in tokens {
+            if let Some(w) = self.token_to_word.get(t) {
+                value.extend_from_slice(w.as_slice());
+                consumed += 1;
             } else {
-                ctx.stack.push(t);
                 break;
             }
         }
-        ctx.stack.is_empty()
+        Ok(DecodeResult::new(value, Some(tokens.len() - consumed)))
     }
 }
 

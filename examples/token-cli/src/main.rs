@@ -205,9 +205,15 @@ fn run(args: &Args) -> anyhow::Result<()> {
 
         let expected: Vec<String> = it.map(|t| encoder.segmentor().remove_gaps(t)).collect();
 
+        let slices = batch.iter().map(|v| v.as_ref()).collect::<Vec<&[T]>>();
+
         {
-            let (duration, wc_decoded) =
-                timeit(|| decoder.try_decode_batch_to_strings(batch).unwrap());
+            let (duration, wc_decoded) = timeit(|| {
+                decoder
+                    .try_decode_batch_to_strings(&slices)
+                    .unwrap()
+                    .unwrap()
+            });
             wc_batch_decode_durations.push(duration);
 
             verify_decode(&expected, &wc_decoded);
