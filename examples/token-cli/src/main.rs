@@ -6,13 +6,13 @@ use std::time::Duration;
 use wordchipper::decoders::{DictionaryDecoder, TokenDecoder};
 use wordchipper::disk_cache::WordchipperDiskCache;
 use wordchipper::encoders::TokenEncoder;
-use wordchipper::encoders::merge_heap_encoder::MergeHeapVocabEncoder;
 use wordchipper::vocab::UnifiedTokenVocab;
 use wordchipper::vocab::public::openai::OATokenizer;
 use wordchipper_data::dataset::DatasetCacheConfig;
 
 #[cfg(feature = "parallel")]
 use rayon::prelude::*;
+use wordchipper::encoders::merge_encoder::MergeEncoder;
 
 /// Time an operation; return (duration, result).
 pub fn timeit<F, R>(f: F) -> (Duration, R)
@@ -74,7 +74,7 @@ fn run(args: &Args) -> anyhow::Result<()> {
     let mut disk_cache = WordchipperDiskCache::default();
     let vocab: UnifiedTokenVocab<T> = OATokenizer::O200kHarmony.load(&mut disk_cache)?;
 
-    let encoder = MergeHeapVocabEncoder::<T>::init(vocab.clone(), args.pool_size);
+    let encoder = MergeEncoder::<T>::init(vocab.clone(), args.pool_size);
     #[cfg(feature = "parallel")]
     let encoder = wordchipper::rayon::ParallelRayonEncoder::new(encoder);
 

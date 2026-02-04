@@ -26,6 +26,7 @@
 //! }
 //! ```
 
+pub mod merge_encoder;
 pub mod merge_heap_encoder;
 pub mod merge_scan_encoder;
 pub mod token_encoder;
