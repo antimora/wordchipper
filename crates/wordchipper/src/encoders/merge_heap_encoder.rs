@@ -171,7 +171,10 @@ impl<T: TokenType> TokenEncoder<T> for MergeHeapVocabEncoder<T> {
     /// ## Arguments
     /// * `text` - The string slice to encode.
     /// * `tokens` - The target token buffer to append to.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip(self, text)))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(level = "trace", skip(self, text, tokens))
+    )]
     fn try_encode_append(
         &self,
         text: &str,
