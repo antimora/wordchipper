@@ -1,6 +1,7 @@
 //! # Tiktoken Vocabulary IO
 
-use crate::types::{CommonHashMap, SpanTokenMap, TokenType};
+use crate::types::TokenType;
+use crate::vocab::vocab_types::SpanTokenMap;
 use anyhow::Context;
 use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
@@ -43,7 +44,7 @@ where
     T: TokenType,
     R: BufRead,
 {
-    let mut vocab: CommonHashMap<Vec<u8>, T> = Default::default();
+    let mut vocab = SpanTokenMap::default();
 
     let stream = reader.lines();
     for line in stream {
