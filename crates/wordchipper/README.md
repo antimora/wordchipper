@@ -171,7 +171,7 @@ fn example<T: TokenType>(
     #[cfg(feature = "rayon")]
     let decoder = wordchipper::rayon::ParallelRayonDecoder::new(decoder);
 
-    decoder.try_decode_batch_to_strings(batch).unwrap()
+    decoder.try_decode_batch_to_strings(batch).unwrap().unwrap()
 }
 ```
 
@@ -297,13 +297,17 @@ fn example<I, S>(
 
 Each shard is ~90MB parquet file.
 
-- 64 Core AMD
-
 ```terminaloutput
-$ time cargo run --release -p tokenizer_trainer -- --dataset-dir /media/Data/nanochat/dataset --time-encode-decode
-   Compiling tokenizer_trainer v0.0.0 (/home/crutcher/git/brn-nanochat/crates/wordchipper/examples/tokenizer_trainer)
-    Finished `release` profile [optimized] target(s) in 24.15s
-     Running `target/release/tokenizer_trainer --dataset-dir /media/Data/nanochat/dataset --time-encode-decode`
+$ time cargo run --release -p tokenizer_trainer -- --dataset-dir ~/Data/nanochat/dataset --shards 
+..8 --voc
+ab-size=65536 --time-encode-decode                                        
+   Compiling anyhow v1.0.100
+   Compiling wordchipper-disk-cache v0.2.2 (/Users/crutcher/git/wordchipper/crates/wordchipper-disk-cache)
+   Compiling wordchipper-data v0.0.0 (/Users/crutcher/git/wordchipper/crates/wordchipper-data)
+   Compiling wordchipper v0.2.2 (/Users/crutcher/git/wordchipper/crates/wordchipper)
+   Compiling tokenizer_trainer v0.0.0 (/Users/crutcher/git/wordchipper/examples/tokenizer_trainer)
+    Finished `release` profile [optimized] target(s) in 2.68s
+     Running `target/release/tokenizer_trainer --dataset-dir /Users/crutcher/Data/nanochat/dataset --shards ..8 --vocab-size=65536 --time-encode-decode`
 Loading Shards: [0, 1, 2, 3, 4, 5, 6, 7]
 ...
 
@@ -317,7 +321,7 @@ Training Tokenizer on shards: [0, 1, 2, 3, 4, 5, 6, 7]
 - shard: 6
 - shard: 7
 - train
-- training_duration: 176.02s
+- training_duration: 106.70s
 - vocab_size: 65535
 
 Samples Summary:
@@ -328,9 +332,9 @@ Timing Config:
 - batch size: 512
 
 Timing Encode:
-- batch avg: 21.532335ms
-- sample avg: 42.055µs
-- avg bps: 112.73 MB/s
+- batch avg: 18.276894ms
+- sample avg: 35.697µs
+- avg bps: 132.81 MB/s
 
 Observed Bytes/Token Stats:
 - total bytes: 97103222
@@ -338,12 +342,8 @@ Observed Bytes/Token Stats:
 - sample byte/token: 3.94
 
 Timing Decode:
-- batch avg: 1.966443ms
-- sample avg: 3.84µs
-
-real    3m0.056s
-user    3m26.345s
-sys     0m4.105s
+- batch avg: 1.829894ms
+- sample avg: 3.574µs
 ```
 
 ## Acknowledgements

@@ -44,7 +44,10 @@ pub fn common_encoder_tests<T: TokenType, E: TokenEncoder<T>>(
     static_is_send_sync_check(&decoder);
 
     let token_batch = encoder.try_encode_batch(&samples).unwrap();
-    let decoded_strings = decoder.try_decode_batch_to_strings(&token_batch).unwrap();
+    let decoded_strings = decoder
+        .try_decode_batch_to_strings(&token_batch.iter().map(|t| t.as_slice()).collect::<Vec<_>>())
+        .unwrap()
+        .unwrap();
 
     assert_eq!(decoded_strings, samples);
 

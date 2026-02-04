@@ -1,8 +1,10 @@
 //! # Pair Expansion ``{ T -> (T, T) }`` Token Decoder
 
-use crate::decoders::decode_context::TokenDecodeContext;
-use crate::decoders::token_decoder::TokenDecoder;
+use crate::alloc::vec;
+use crate::alloc::vec::Vec;
+use crate::decoders::token_decoder::{DecodeResult, TokenDecoder};
 use crate::types::TokenType;
+use crate::vocab::size_hints::EXPECTED_BYTES_PER_TOKEN;
 use crate::vocab::vocab_types::TokenPairMap;
 use crate::vocab::{ByteMapVocab, PairMapVocab};
 
@@ -53,23 +55,38 @@ impl<T: TokenType> PairExpansionDecoder<T> {
 }
 
 impl<T: TokenType> TokenDecoder<T> for PairExpansionDecoder<T> {
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip(self, ctx)))]
-    fn incremental_decode(
+    fn try_decode_to_bytes(
         &self,
-        ctx: &mut TokenDecodeContext<T>,
-    ) -> bool {
-        while let Some(t) = ctx.stack.pop() {
-            if let Some(b) = self.byte_vocab.get_byte(t) {
-                ctx.buf.push(b);
-            } else if let Some((a, b)) = self.token_map.get(&t) {
-                ctx.stack.push(*b);
-                ctx.stack.push(*a);
+        tokens: &[T],
+    ) -> anyhow::Result<DecodeResult<Vec<u8>>> {
+        let capacity = (tokens.len() as f64 * EXPECTED_BYTES_PER_TOKEN) as usize;
+        let mut value = Vec::with_capacity(capacity);
+
+        let mut stack = vec![];
+        let mut consumed = 0;
+
+        for t in tokens {
+            stack.push(*t);
+
+            while let Some(t) = stack.pop() {
+                if let Some(b) = self.byte_vocab.get_byte(t) {
+                    value.push(b);
+                } else if let Some((a, b)) = self.token_map.get(&t) {
+                    stack.push(*b);
+                    stack.push(*a);
+                } else {
+                    stack.push(t);
+                    break;
+                }
+            }
+
+            if stack.is_empty() {
+                consumed += 1;
             } else {
-                ctx.stack.push(t);
                 break;
             }
         }
-        ctx.stack.is_empty()
+        Ok(DecodeResult::new(value, Some(tokens.len() - consumed)))
     }
 }
 

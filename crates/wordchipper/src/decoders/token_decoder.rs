@@ -3,91 +3,145 @@
 use crate::alloc::string::String;
 use crate::alloc::vec::Vec;
 use crate::compat::strings::string_from_utf8_lossy;
-use crate::decoders::TokenDecodeContext;
 use crate::types::TokenType;
+
+/// The result of decoding tokens into bytes.
+pub struct DecodeResult<V> {
+    /// The remaining token count.
+    pub remaining: Option<usize>,
+
+    /// The decoded result.
+    pub value: V,
+}
+
+impl<V> DecodeResult<V> {
+    /// Construct a new result.
+    pub fn new(
+        value: V,
+        remaining: Option<usize>,
+    ) -> Self {
+        let remaining = remaining.filter(|&r| r > 0);
+        Self { value, remaining }
+    }
+
+    /// Try to unwrap the result, returning an error if the decoding is incomplete.
+    pub fn try_result(self) -> anyhow::Result<V> {
+        if let Some(remaining) = self.remaining
+            && remaining > 0
+        {
+            return Err(anyhow::anyhow!(
+                "Incomplete decode: {} remaining tokens",
+                remaining
+            ));
+        }
+        Ok(self.value)
+    }
+
+    /// Unwrap the result, panicking if the decoding is incomplete.
+    pub fn unwrap(self) -> V {
+        self.try_result().unwrap()
+    }
+
+    /// Returns `true` if the decoding is complete.
+    pub fn is_complete(&self) -> bool {
+        if let Some(remaining) = self.remaining
+            && remaining > 0
+        {
+            return false;
+        }
+        true
+    }
+
+    /// Convert the result using a conversion function.
+    pub fn convert<F, U>(
+        self,
+        f: &F,
+    ) -> DecodeResult<U>
+    where
+        F: Fn(V) -> U,
+    {
+        DecodeResult {
+            remaining: self.remaining,
+            value: f(self.value),
+        }
+    }
+}
+
+/// The result of decoding a batch of tokens into bytes.
+pub struct BatchDecodeResult<V> {
+    /// The per-item results.
+    pub results: Vec<DecodeResult<V>>,
+}
+
+impl<V> From<Vec<DecodeResult<V>>> for BatchDecodeResult<V> {
+    fn from(results: Vec<DecodeResult<V>>) -> Self {
+        Self { results }
+    }
+}
+
+impl<V> BatchDecodeResult<V> {
+    /// Is the decoding complete for all items?
+    pub fn is_complete(&self) -> bool {
+        self.results.iter().all(|r| r.is_complete())
+    }
+
+    /// Try to unwrap the results, returning an error if any decoding is incomplete.
+    pub fn try_results(self) -> anyhow::Result<Vec<V>> {
+        self.results.into_iter().map(|r| r.try_result()).collect()
+    }
+
+    /// Unwrap the results, panicking if any decoding is incomplete.
+    pub fn unwrap(self) -> Vec<V> {
+        self.try_results().unwrap()
+    }
+
+    /// Convert the results using a conversion function.
+    pub fn convert<F, U>(
+        self,
+        f: &F,
+    ) -> BatchDecodeResult<U>
+    where
+        F: Fn(V) -> U,
+    {
+        BatchDecodeResult {
+            results: self.results.into_iter().map(|r| r.convert(f)).collect(),
+        }
+    }
+}
 
 /// Trait for token decoders.
 pub trait TokenDecoder<T: TokenType>: Send + Sync {
-    /// Incrementally decodes the context.
-    ///
-    /// Progresses until `ctx.stack` is empty,
-    /// or the top token cannot be decoded by this decoders.
-    ///
-    /// ## Arguments
-    /// * `ctx` - The decoding context to process.
-    ///
-    /// ## Returns
-    /// `ctx.stack.is_empty()`
-    fn incremental_decode(
-        &self,
-        ctx: &mut TokenDecodeContext<T>,
-    ) -> bool;
-
     /// Decodes tokens into bytes.
     ///
     /// ## Arguments
     /// * `tokens` - A slice of tokens to decode.
     ///
     /// ## Returns
-    /// A `TokenDecodeContext` containing the decoded bytes and any remaining tokens.
-    fn try_decode_to_context<S: AsRef<[T]>>(
+    /// A `Result<DecodeResult<Vec<u8>>>`.
+    fn try_decode_to_bytes(
         &self,
-        tokens: S,
-    ) -> anyhow::Result<TokenDecodeContext<T>> {
-        let mut context = tokens.as_ref().to_vec().into();
-        self.incremental_decode(&mut context);
-        Ok(context)
-    }
+        tokens: &[T],
+    ) -> anyhow::Result<DecodeResult<Vec<u8>>>;
 
-    /// Decodes a batch of tokens to [`TokenDecodeContext`].
+    /// Decodes a batch of tokens.
     ///
     /// ## Arguments
-    /// * `batch` - The batch of tokens to decode.
+    /// * `batch` - A batch of tokens.
     ///
     /// ## Returns
-    /// A `Result` containing the partial decode contexts.
-    fn try_decode_batch_to_context<S: AsRef<[T]>>(
+    /// A `Result<Vec<DecodeResult<Vec<u8>>>>`.
+    fn try_decode_batch_to_bytes(
         &self,
-        batch: &[S],
-    ) -> anyhow::Result<Vec<TokenDecodeContext<T>>> {
+        batch: &[&[T]],
+    ) -> anyhow::Result<BatchDecodeResult<Vec<u8>>> {
         batch
             .iter()
-            .map(|tokens| self.try_decode_to_context(tokens))
-            .collect()
+            .map(|tokens| self.try_decode_to_bytes(tokens))
+            .collect::<anyhow::Result<Vec<_>>>()
+            .map(BatchDecodeResult::from)
     }
 
-    /// Decode tokens into bytes, returning an error if the decoding fails.
-    ///
-    /// ## Arguments
-    /// * `tokens` - A slice of tokens to decode.
-    ///
-    /// ## Returns
-    /// A `Result` containing the decoded byte vector or an error if decoding is incomplete.
-    fn try_decode_to_bytes<S: AsRef<[T]>>(
-        &self,
-        tokens: S,
-    ) -> anyhow::Result<Vec<u8>> {
-        self.try_decode_to_context(tokens)?.try_result()
-    }
-
-    /// Decodes a batch of tokens into a vector of byte vectors, returning an error if the decoding fails.
-    ///
-    /// ## Arguments
-    /// * `batch` - A slice of token vectors to decode.
-    ///
-    /// ## Returns
-    /// A `Result` containing a vector of decoded byte vectors or an error if any decoding fails.
-    fn try_decode_batch_to_bytes<V: AsRef<[T]>>(
-        &self,
-        batch: &[V],
-    ) -> anyhow::Result<Vec<Vec<u8>>> {
-        self.try_decode_batch_to_context(batch)?
-            .into_iter()
-            .map(|ctx| ctx.try_result())
-            .collect()
-    }
-
-    /// Decodes tokens into a string, returning an error if the decoding fails.
+    /// Decodes tokens into a string.
     ///
     /// UTF-8 lossy decoding is used to handle invalid UTF-8 sequences.
     ///
@@ -95,33 +149,33 @@ pub trait TokenDecoder<T: TokenType>: Send + Sync {
     /// * `tokens` - A slice of tokens to decode.
     ///
     /// ## Returns
-    /// A `Result` containing the decoded string or an error if decoding is incomplete.
-    fn try_decode_to_string<S: AsRef<[T]>>(
+    /// A `Result<Vec<DecodeResult<String>>>`.
+    fn try_decode_to_string(
         &self,
-        tokens: S,
-    ) -> anyhow::Result<String> {
-        Ok(string_from_utf8_lossy(self.try_decode_to_bytes(tokens)?))
+        tokens: &[T],
+    ) -> anyhow::Result<DecodeResult<String>> {
+        self.try_decode_to_bytes(tokens)
+            .map(|res| res.convert(&string_from_utf8_lossy))
     }
 
-    /// Decodes a batch of tokens into a vector of strings, returning an error if the decoding fails.
+    /// Decodes a batch of tokens.
     ///
     /// UTF-8 lossy decoding is used to handle invalid UTF-8 sequences.
     ///
     /// ## Arguments
-    /// * `batch` - A slice of token vectors to decode.
+    /// * `batch` - A batch of tokens.
     ///
     /// ## Returns
-    /// A `Result` containing a vector of decoded strings or an error if any decoding fails.
-    fn try_decode_batch_to_strings<V: AsRef<[T]>>(
+    /// A `Result<Vec<(usize, String)>>` of `[(consumed takens, string)]`.
+    fn try_decode_batch_to_strings(
         &self,
-        batch: &[V],
-    ) -> anyhow::Result<Vec<String>> {
-        self.try_decode_batch_to_bytes(batch).map(|bytes_batch| {
-            bytes_batch
-                .into_iter()
-                .map(string_from_utf8_lossy)
-                .collect()
-        })
+        batch: &[&[T]],
+    ) -> anyhow::Result<BatchDecodeResult<String>> {
+        batch
+            .iter()
+            .map(|tokens| self.try_decode_to_string(tokens))
+            .collect::<anyhow::Result<Vec<_>>>()
+            .map(BatchDecodeResult::from)
     }
 }
 
@@ -147,11 +201,9 @@ mod tests {
         );
         tokens.extend_from_slice(&[256, 3000]);
 
-        let mut ctx: TokenDecodeContext<T> = tokens.into();
-        assert!(!decoder.incremental_decode(&mut ctx));
-
-        assert_eq!(ctx.buf, "hello world".as_bytes().to_vec());
-        assert_eq!(ctx.stack, [3000, 256]);
+        let result = decoder.try_decode_to_bytes(&tokens).unwrap();
+        assert_eq!(result.value, "hello world".as_bytes().to_vec());
+        assert_eq!(result.remaining, Some(2));
     }
 
     #[test]
@@ -176,13 +228,21 @@ mod tests {
             .collect();
 
         // Test the batch interfaces.
-        let string_batch = decoder.try_decode_batch_to_strings(&token_batch).unwrap();
+        let string_batch = decoder
+            .try_decode_batch_to_strings(
+                &token_batch
+                    .iter()
+                    .map(|v| v.as_ref())
+                    .collect::<Vec<&[T]>>(),
+            )
+            .unwrap()
+            .unwrap();
         assert_eq!(string_batch, str_samples);
 
         // Test the single-sample interfaces.
         for (sample, tokens) in str_samples.iter().zip(token_batch.iter()) {
             assert_eq!(
-                decoder.try_decode_to_string(tokens).unwrap(),
+                decoder.try_decode_to_string(tokens).unwrap().unwrap(),
                 sample.to_string()
             );
         }

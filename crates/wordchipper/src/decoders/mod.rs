@@ -22,7 +22,9 @@
 //!     #[cfg(feature = "rayon")]
 //!     let decoder = wordchipper::rayon::ParallelRayonDecoder::new(decoder);
 //!
-//!     decoder.try_decode_batch_to_strings(batch).unwrap()
+//!     let slices: Vec<&[T]> = batch.iter().map(|v| v.as_ref()).collect();
+//!
+//!     decoder.try_decode_batch_to_strings(&slices).unwrap().unwrap()
 //! }
 //! ```
 

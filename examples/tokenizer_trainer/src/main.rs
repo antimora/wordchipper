@@ -226,7 +226,13 @@ fn main() -> anyhow::Result<()> {
                 .zip(token_batches.iter())
                 .map(|(sample, batch)| {
                     let t0 = std::time::Instant::now();
-                    let decoded_sample = decoder.try_decode_batch_to_strings(batch).unwrap();
+                    let decoded_sample = decoder
+                        .try_decode_batch_to_strings(
+                            &batch.iter().map(|v| v.as_ref()).collect::<Vec<&[T]>>(),
+                        )
+                        .unwrap()
+                        .unwrap();
+
                     let t1 = std::time::Instant::now();
 
                     for (s, d) in sample.iter().zip(decoded_sample.iter()) {

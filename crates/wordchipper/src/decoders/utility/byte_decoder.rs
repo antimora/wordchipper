@@ -2,9 +2,11 @@
 //!
 //! Mainly used for utility.
 
-use crate::decoders::{TokenDecodeContext, TokenDecoder};
+use crate::alloc::vec::Vec;
+use crate::decoders::token_decoder::{DecodeResult, TokenDecoder};
 use crate::types::TokenType;
 use crate::vocab::byte_vocab::ByteMapVocab;
+use crate::vocab::size_hints::EXPECTED_BYTES_PER_TOKEN;
 
 /// A [`ByteMapVocab`] based [`TokenDecoder`].
 ///
@@ -36,20 +38,22 @@ impl<T: TokenType> ByteDecoder<T> {
 }
 
 impl<T: TokenType> TokenDecoder<T> for ByteDecoder<T> {
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip(self, ctx)))]
-    fn incremental_decode(
+    fn try_decode_to_bytes(
         &self,
-        ctx: &mut TokenDecodeContext<T>,
-    ) -> bool {
-        while let Some(t) = ctx.stack.pop() {
+        tokens: &[T],
+    ) -> anyhow::Result<DecodeResult<Vec<u8>>> {
+        let capacity = (tokens.len() as f64 * EXPECTED_BYTES_PER_TOKEN) as usize;
+        let mut value = Vec::with_capacity(capacity);
+        let mut consumed = 0;
+        for &t in tokens {
             if let Some(b) = self.byte_vocab.get_byte(t) {
-                ctx.buf.push(b);
+                value.push(b);
+                consumed += 1;
             } else {
-                ctx.stack.push(t);
                 break;
             }
         }
-        ctx.stack.is_empty()
+        Ok(DecodeResult::new(value, Some(tokens.len() - consumed)))
     }
 }
 
@@ -72,10 +76,8 @@ mod tests {
         );
         tokens.extend_from_slice(&[256, 3000]);
 
-        let mut ctx: TokenDecodeContext<T> = tokens.into();
-        assert!(!decoder.incremental_decode(&mut ctx));
-
-        assert_eq!(ctx.buf, "hello world".as_bytes().to_vec());
-        assert_eq!(ctx.stack, [3000, 256]);
+        let result = decoder.try_decode_to_bytes(&tokens).unwrap();
+        assert_eq!(result.value, "hello world".as_bytes().to_vec());
+        assert_eq!(result.remaining, Some(2));
     }
 }

@@ -469,7 +469,10 @@ mod tests {
 
         for sample in samples {
             let tokens = encoder.try_encode(sample).unwrap();
-            assert_eq!(decoder.try_decode_to_string(tokens).unwrap(), sample);
+            assert_eq!(
+                decoder.try_decode_to_string(&tokens).unwrap().unwrap(),
+                sample
+            );
         }
     }
 

@@ -125,7 +125,7 @@ impl<T: TokenType> TokenVocab<T> for PairMapVocab<T> {
         self.byte_vocab.span_pairs().chain(
             self.pair_map
                 .values()
-                .map(move |&t| (decoder.try_decode_to_bytes([t]).unwrap(), t)),
+                .map(move |&t| (decoder.try_decode_to_bytes(&[t]).unwrap().unwrap(), t)),
         )
     }
 }
