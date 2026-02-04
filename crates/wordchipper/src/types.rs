@@ -2,42 +2,37 @@
 use crate::alloc::vec::Vec;
 use core::fmt::{Debug, Display};
 use core::hash::Hash;
-use core::ops::{AddAssign, SubAssign};
-use num_traits::bounds::UpperBounded;
-use num_traits::{FromPrimitive, Num, ToPrimitive, Unsigned};
+use num_traits::{FromPrimitive, PrimInt, ToPrimitive, Unsigned};
+use std::ops::{AddAssign, SubAssign};
 
 /// A type that can be used as a token in a BPE-based encoders.
 pub trait TokenType:
     'static
-    + Default
-    + Debug
-    + Clone
-    + Copy
-    + Hash
-    + Send
-    + Sync
-    + Unsigned
+    + PrimInt
     + FromPrimitive
     + ToPrimitive
-    + UpperBounded
-    + Ord
+    + Unsigned
+    + Hash
+    + Default
+    + Debug
+    + Display
+    + Send
+    + Sync
 {
 }
 
 impl<T> TokenType for T where
     T: 'static
-        + Default
-        + Debug
-        + Clone
-        + Copy
-        + Hash
-        + Send
-        + Sync
-        + Unsigned
+        + PrimInt
         + FromPrimitive
         + ToPrimitive
-        + UpperBounded
-        + Ord
+        + Unsigned
+        + Hash
+        + Default
+        + Debug
+        + Display
+        + Send
+        + Sync
 {
 }
 
@@ -46,34 +41,34 @@ pub type Pair<T> = (T, T);
 
 /// A type that can be used as a word count.
 pub trait CountType:
-    Num
-    + AddAssign
-    + SubAssign
+    'static
+    + PrimInt
+    + FromPrimitive
+    + ToPrimitive
+    + Hash
     + Default
-    + Copy
     + Debug
     + Display
     + Send
     + Sync
-    + Hash
-    + Ord
-    + FromPrimitive
+    + AddAssign
+    + SubAssign
 {
 }
 
 impl<T> CountType for T where
-    T: Num
-        + AddAssign
-        + SubAssign
+    T: 'static
+        + PrimInt
+        + FromPrimitive
+        + ToPrimitive
+        + Hash
         + Default
-        + Copy
         + Debug
         + Display
         + Send
         + Sync
-        + Hash
-        + Ord
-        + FromPrimitive
+        + AddAssign
+        + SubAssign
 {
 }
 
