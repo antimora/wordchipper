@@ -1,5 +1,7 @@
 //! # Slice Utilities
 
+use crate::alloc::vec::Vec;
+
 /// Converts a `&[Vec<T>]` into a `&[&[T]]`.
 pub fn inner_slice_view<T, C: AsRef<[T]>>(x: &[C]) -> Vec<&[T]> {
     x.iter().map(|c| c.as_ref()).collect()
