@@ -27,11 +27,6 @@ impl<T: TokenType> SpanEncoder<T> for MergeHeapSpanEncoder<T> {
         span: &[u8],
         tokens: &mut Vec<T>,
     ) {
-        if self.pair_ranks.len() < span.len() - 1 {
-            self.pair_ranks.resize(span.len() - 1, T::max_value());
-        }
-        self.pair_ranks.clear();
-
         // We reuse the output buffer as our working memory.
         // - `start` is the first index of the working memory buffer.
         let start = tokens.len();
@@ -50,6 +45,7 @@ impl<T: TokenType> SpanEncoder<T> for MergeHeapSpanEncoder<T> {
         // We keep the following property:
         // - pair_ranks[i] = pairs.get(&(CURRENT[i], CURRENT[i + 1]))
         // - pair_ranks.len() = CURRENT.len() - 1 = end - start - 1
+        self.pair_ranks.clear();
         self.pair_ranks
             .extend((0..(tokens.len() - start - 1)).map(|i| pr_for_tokens(tokens, i, i + 1)));
 
