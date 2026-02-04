@@ -2756,6 +2756,7 @@ dependencies = [
  "ahash",
  "anyhow",
  "base64",
+ "cfg-if",
  "compact_str",
  "dary_heap",
  "document-features",

@@ -103,8 +103,8 @@ experimental = [
 
 
 [dependencies]
-# no-default deps
 anyhow = { workspace = true }
+cfg-if = { workspace = true }
 document-features = { workspace = true }
 fancy-regex = { workspace = true, features = ["unicode"] }
 log = { workspace = true }

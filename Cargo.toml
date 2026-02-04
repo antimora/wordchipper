@@ -27,6 +27,7 @@ doc_markdown = "deny"
 [workspace.dependencies]
 ahash = "^0.8"
 arrow = "^57.1"
+cfg-if = "^1.0"
 base64 = "^0.22"
 bimm-contracts = "^0.19.2"
 burn = "^0.20.0"
