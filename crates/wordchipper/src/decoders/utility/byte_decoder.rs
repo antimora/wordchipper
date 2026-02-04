@@ -2,6 +2,7 @@
 //!
 //! Mainly used for utility.
 
+use crate::alloc::vec::Vec;
 use crate::decoders::token_decoder::{DecodeResult, TokenDecoder};
 use crate::types::TokenType;
 use crate::vocab::byte_vocab::ByteMapVocab;

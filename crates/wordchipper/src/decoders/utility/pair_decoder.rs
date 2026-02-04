@@ -1,5 +1,7 @@
 //! # Pair Expansion ``{ T -> (T, T) }`` Token Decoder
 
+use crate::alloc::vec;
+use crate::alloc::vec::Vec;
 use crate::decoders::token_decoder::{DecodeResult, TokenDecoder};
 use crate::types::TokenType;
 use crate::vocab::size_hints::EXPECTED_BYTES_PER_TOKEN;
