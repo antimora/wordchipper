@@ -3351,6 +3351,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "hashlru"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2c782df656366ccb42fbbac7c7c180535a43d906a138ffb491ec3ed56a239ab"
+dependencies = [
+ "hashbrown 0.13.2",
+]
+
+[[package]]
 name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7715,6 +7724,7 @@ dependencies = [
  "dary_heap",
  "fancy-regex",
  "hashbrown 0.16.1",
+ "hashlru",
  "log",
  "num-traits",
  "parking_lot",
