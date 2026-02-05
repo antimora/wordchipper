@@ -35,24 +35,28 @@ impl From<SpanRef> for Range<usize> {
     }
 }
 
-/// Word Split + Special Words Segmentor
-#[derive(Clone)]
-pub struct TextSegmentor {
-    #[cfg(feature = "std")]
-    /// Regex for splitting words.
-    pub word_re: crate::concurrency::PoolToy<RegexWrapper>,
+cfg_if::cfg_if! {
+    if #[cfg(feature = "std")] {
+        /// Word Split + Special Words Segmentor
+        #[derive(Clone)]
+        pub struct TextSegmentor {
+            /// Regex for splitting words.
+            pub word_re: crate::concurrency::PoolToy<RegexWrapper>,
 
-    /// Regex for splitting words.
-    #[cfg(not(feature = "std"))]
-    pub word_re: RegexWrapper,
+            /// Regex for matching special words.
+            pub special_re: Option<crate::concurrency::PoolToy<RegexWrapper>>,
+        }
+    } else {
+        /// Word Split + Special Words Segmentor
+        #[derive(Clone)]
+        pub struct TextSegmentor {
+            /// Regex for splitting words.
+            pub word_re: RegexWrapper,
 
-    /// Regex for matching special words.
-    #[cfg(feature = "std")]
-    pub special_re: Option<crate::concurrency::PoolToy<RegexWrapper>>,
-
-    /// Regex for matching special words.
-    #[cfg(not(feature = "std"))]
-    pub special_re: Option<RegexWrapper>,
+            /// Regex for matching special words.
+            pub special_re: Option<RegexWrapper>,
+        }
+    }
 }
 
 impl TextSegmentor {
@@ -97,12 +101,12 @@ impl TextSegmentor {
         P: Into<RegexWrapperPattern>,
         S: AsRef<str>,
     {
-        let span_re = word_pattern.into().compile().unwrap();
+        let span_re = word_pattern.into().into();
 
         let special_re = if specials.is_empty() {
             None
         } else {
-            Some(exact_match_union_regex_pattern(specials).compile().unwrap())
+            Some(exact_match_union_regex_pattern(specials).into())
         };
 
         Self::init(span_re, special_re, max_pool)
@@ -122,13 +126,15 @@ impl TextSegmentor {
         special_re: Option<RegexWrapper>,
         max_pool: Option<NonZeroUsize>,
     ) -> Self {
-        #[cfg(feature = "std")]
-        let word_re = crate::concurrency::PoolToy::init(word_re, max_pool);
-        #[cfg(feature = "std")]
-        let special_re = special_re.map(|r| crate::concurrency::PoolToy::init(r, max_pool));
-
-        #[cfg(not(feature = "std"))]
-        let _ = max_pool;
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "std")] {
+                let word_re = crate::concurrency::PoolToy::init(word_re, max_pool);
+                let special_re = special_re
+                    .map(|r| crate::concurrency::PoolToy::init(r, max_pool));
+            } else {
+                let _ = max_pool;
+            }
+        }
 
         Self {
             word_re,
@@ -138,23 +144,27 @@ impl TextSegmentor {
 
     /// Get the span split regex.
     pub fn word_regex(&self) -> &RegexWrapper {
-        #[cfg(feature = "std")]
-        return self.word_re.as_ref();
-
-        #[cfg(not(feature = "std"))]
-        return &self.word_re;
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "std")] {
+                self.word_re.get()
+            } else {
+                &self.word_re
+            }
+        }
     }
 
     /// Get the optional special split regex.
     pub fn special_regex(&self) -> Option<&RegexWrapper> {
-        #[cfg(feature = "std")]
-        return match &self.special_re {
-            None => None,
-            Some(pool) => Some(pool.as_ref()),
-        };
-
-        #[cfg(not(feature = "std"))]
-        return self.special_re.as_ref();
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "std")] {
+                match self.special_re.as_ref() {
+                    Some(p) => Some(p.get()),
+                    None => None
+                }
+            } else {
+                self.special_re.as_ref()
+            }
+        }
     }
 
     /// Find the next special span in the text.
@@ -189,7 +199,7 @@ impl TextSegmentor {
     /// ``(completed, consumed)`` where:
     /// - `consumed` is the number of bytes covered by spans accepted by `f`;
     /// - `completed` is if all spans were accepted.
-    pub fn for_each_split<F>(
+    pub fn for_each_split_span<F>(
         &self,
         text: &str,
         f: &mut F,
@@ -209,42 +219,18 @@ impl TextSegmentor {
                 return (false, offset + used);
             }
 
-            // we've consumed `offset + used` bytes at this point.
-
-            if used < range.start && !f(SpanRef::Gap(offset_range::<usize>(used..start, offset))) {
-                return (false, offset + used);
-            }
-
             // we've consumed `offset + start` bytes at this point.
-
             if !f(SpanRef::Special(offset_range::<usize>(range, offset))) {
+                // Special Exit
                 return (false, offset + start);
             }
 
             // we've consumed `offset + end` bytes at this point.
-
             current = &current[end..];
             offset += end;
         }
 
-        if !current.is_empty() {
-            let (cont, used) = self.for_each_word(current, offset, f);
-            if !cont {
-                return (false, offset + used);
-            }
-
-            // we've consumed `offset + used` bytes at this point.
-
-            if used < current.len()
-                && !f(SpanRef::Gap(offset_range::<usize>(
-                    used..current.len(),
-                    offset,
-                )))
-            {
-                return (false, offset + used);
-            }
-        }
-        (true, text.len())
+        self.for_each_word(current, offset, f)
     }
 
     fn for_each_word<F>(
@@ -262,16 +248,29 @@ impl TextSegmentor {
             let Range { start, end } = range;
 
             if last < start {
-                if !f(SpanRef::Gap(last..start)) {
+                if !f(SpanRef::Gap(offset_range::<usize>(last..start, offset))) {
+                    // Leading Gap Exit
                     return (false, last);
                 }
                 last = start;
             }
 
             if !f(SpanRef::Word(offset_range::<usize>(range, offset))) {
+                // Word Exit
                 return (false, last);
             }
             last = end;
+        }
+
+        if last < text.len() {
+            if !f(SpanRef::Gap(offset_range::<usize>(
+                last..text.len(),
+                offset,
+            ))) {
+                // Trailing Gap Exit
+                return (false, last);
+            }
+            last = text.len();
         }
 
         (true, last)
@@ -291,7 +290,7 @@ impl TextSegmentor {
         let capacity = text.len() as f64 / (EXPECTED_BYTES_PER_TOKEN * 0.8);
         let mut words = Vec::with_capacity(capacity as usize);
 
-        self.for_each_split(text, &mut |span_ref| {
+        self.for_each_split_span(text, &mut |span_ref| {
             words.push(span_ref);
             true
         });
@@ -334,6 +333,87 @@ mod tests {
     use super::*;
     use crate::alloc::vec;
     use crate::vocab::public::openai::patterns::OA_GPT3_CL100K_WORD_PATTERN;
+
+    #[test]
+    fn test_for_each_split_span() {
+        use SpanRef::*;
+        type T = u32;
+
+        let config: SegmentationConfig<T> = SegmentationConfig::from_pattern(r"\w+")
+            .with_special_words([("<|FNORD|>", 4000), ("<|NORP|>", 4001)]);
+
+        let segmentor = TextSegmentor::from_config(config, Some(NonZeroUsize::new(1).unwrap()));
+
+        let source = "abc 1<|FNORD|> def  <|NORP|> ghi   ";
+
+        let mut spans: Vec<SpanRef> = Vec::new();
+        segmentor.for_each_split_span(source, &mut |span_ref| {
+            spans.push(span_ref);
+            true
+        });
+        assert_eq!(
+            spans,
+            vec![
+                Word(0..3),
+                Gap(3..4),
+                Word(4..5),
+                Special(5..14),
+                Gap(14..15),
+                Word(15..18),
+                Gap(18..20),
+                Special(20..28),
+                Gap(28..29),
+                Word(29..32),
+                Gap(32..35),
+            ]
+        );
+
+        // The following are white-box tests to exercise the different halting points.
+
+        // Test "for_each_split_span" Word Exit
+        let mut spans: Vec<SpanRef> = Vec::new();
+        segmentor.for_each_split_span("   abc", &mut |span_ref| match span_ref {
+            Word(_) => false,
+            _ => {
+                spans.push(span_ref);
+                true
+            }
+        });
+        assert_eq!(spans, vec![Gap(0..3)]);
+
+        // Test "for_each_split_span" Special Exit
+        let mut spans: Vec<SpanRef> = Vec::new();
+        segmentor.for_each_split_span("abc   def<|FNORD|>", &mut |span_ref| match span_ref {
+            Special(_) => false,
+            _ => {
+                spans.push(span_ref);
+                true
+            }
+        });
+        assert_eq!(spans, vec![Word(0..3), Gap(3..6), Word(6..9)]);
+
+        // Test "for_each_word" Leading Gap Exit
+        let mut spans: Vec<SpanRef> = Vec::new();
+        segmentor.for_each_split_span("abc  def", &mut |span_ref| match span_ref {
+            Gap(_) => false,
+            _ => {
+                spans.push(span_ref);
+                true
+            }
+        });
+        assert_eq!(spans, vec![Word(0..3)]);
+
+        // Test "for_each_word" Trailing Gap Exit
+        let mut spans: Vec<SpanRef> = Vec::new();
+        segmentor.for_each_split_span("foo  ", &mut |span_ref| match span_ref {
+            Gap(_) => false,
+            _ => {
+                spans.push(span_ref);
+                true
+            }
+        });
+        assert_eq!(spans, vec![Word(0..3)]);
+    }
 
     #[test]
     fn test_split_words() {

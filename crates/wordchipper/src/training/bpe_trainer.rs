@@ -196,21 +196,11 @@ where
         }
     }
 
-    /// Update the word counts inplace from a text string.
-    ///
-    /// ## Arguments
-    /// * `text` - The text string to process.
-    pub fn update_from_text<S: AsRef<str>>(
-        &mut self,
-        text: S,
-    ) {
-        self.span_counter.update_from_text(text);
-    }
-
     /// Update word counts inplace from a sample iterator.
     ///
     /// ## Arguments
     /// * `samples` - An iterator over string-like samples.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip(self, samples)))]
     pub fn update_from_samples<I>(
         &mut self,
         samples: I,

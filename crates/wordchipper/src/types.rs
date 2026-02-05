@@ -37,40 +37,38 @@ impl<T> TokenType for T where
 /// A pair of tokens.
 pub type Pair<T> = (T, T);
 
-#[cfg(feature = "ahash")]
-mod hash_types {
-    /// Type Alias for hash maps in this crate.
-    pub type CommonHashMap<K, V> = ahash::AHashMap<K, V>;
+cfg_if::cfg_if! {
+    if #[cfg(feature = "ahash")] {
+        /// Type Alias for hash maps in this crate.
+        pub type CommonHashMap<K, V> = ahash::AHashMap<K, V>;
 
-    /// Iterator over hash map entries.
-    pub type CommonHashIter<'a, K, V> = std::collections::hash_map::Iter<'a, K, V>;
+        /// Iterator over hash map entries.
+        pub type CommonHashIter<'a, K, V> = std::collections::hash_map::Iter<'a, K, V>;
 
-    /// Type Alias for hash sets in this crate.
-    pub type CommonHashSet<V> = ahash::AHashSet<V>;
+        /// Type Alias for hash sets in this crate.
+        pub type CommonHashSet<V> = ahash::AHashSet<V>;
+    } else if #[cfg(feature = "std")] {
+        /// Type Alias for hash maps in this crate.
+        pub type CommonHashMap<K, V> = std::collections::HashMap<K, V>;
+
+        /// Iterator over hash map entries.
+        pub type CommonHashIter<'a, K, V> = std::collections::hash_map::Iter<'a, K, V>;
+
+        /// Type Alias for hash sets in this crate.
+        pub type CommonHashSet<V> = std::collections::HashSet<V>;
+    } else if #[cfg(feature = "no_std")] {
+        /// Type Alias for hash maps in this crate.
+        pub type CommonHashMap<K, V> = hashbrown::HashMap<K, V>;
+
+        /// Iterator over hash map entries.
+        pub type CommonHashIter<'a, K, V> = hashbrown::hash_map::Iter<'a, K, V>;
+
+        /// Type Alias for hash sets in this crate.
+        pub type CommonHashSet<V> = hashbrown::HashSet<V>;
+    } else {
+        compile_error!("not(\"std\") requires \"no_std\" feature");
+    }
 }
-#[cfg(all(feature = "std", not(feature = "ahash")))]
-mod hash_types {
-    /// Type Alias for hash maps in this crate.
-    pub type CommonHashMap<K, V> = std::collections::HashMap<K, V>;
-
-    /// Iterator over hash map entries.
-    pub type CommonHashIter<'a, K, V> = std::collections::hash_map::Iter<'a, K, V>;
-
-    /// Type Alias for hash sets in this crate.
-    pub type CommonHashSet<V> = std::collections::HashSet<V>;
-}
-#[cfg(all(not(feature = "std"), feature = "no_std"))]
-mod hash_types {
-    /// Type Alias for hash maps in this crate.
-    pub type CommonHashMap<K, V> = hashbrown::HashMap<K, V>;
-
-    /// Iterator over hash map entries.
-    pub type CommonHashIter<'a, K, V> = hashbrown::hash_map::Iter<'a, K, V>;
-
-    /// Type Alias for hash sets in this crate.
-    pub type CommonHashSet<V> = hashbrown::HashSet<V>;
-}
-pub use hash_types::*;
 
 #[cfg(test)]
 mod tests {
