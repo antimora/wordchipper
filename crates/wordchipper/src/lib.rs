@@ -63,14 +63,7 @@ pub use wordchipper_disk_cache as disk_cache;
 #[cfg(feature = "std")]
 pub mod concurrency;
 
-cfg_if::cfg_if! {
-    if #[cfg(feature = "compat")] {
-        pub mod compat;
-    } else {
-        mod compat;
-    }
-}
-
+pub mod compat;
 pub mod decoders;
 pub mod encoders;
 pub mod regex;
