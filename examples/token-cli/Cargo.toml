@@ -15,7 +15,7 @@ parallel = []
 
 [dependencies]
 wordchipper-data = { path = "../../crates/wordchipper-data" }
-wordchipper = { path = "../../crates/wordchipper", features = ["compat"] }
+wordchipper = { path = "../../crates/wordchipper" }
 
 anyhow = { workspace = true }
 arrow = { workspace = true }

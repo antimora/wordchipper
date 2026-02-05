@@ -162,7 +162,7 @@ impl TextSegmentor {
                     None => None
                 }
             } else {
-                &self.special_re;
+                self.special_re.as_ref()
             }
         }
     }

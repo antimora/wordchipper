@@ -1,9 +1,8 @@
 //! # Time Utilities
 
-use std::time::Duration;
-
 /// Time an operation; return (duration, result).
-pub fn timeit<F, R>(f: F) -> (Duration, R)
+#[cfg(feature = "std")]
+pub fn timeit<F, R>(f: F) -> (std::time::Duration, R)
 where
     F: FnOnce() -> R,
 {
@@ -15,11 +14,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
+    #[cfg(feature = "std")]
     fn test_timeit() {
-        let (dur, _) = timeit(|| {
+        use std::time::Duration;
+        let (dur, _) = super::timeit(|| {
             std::thread::sleep(Duration::from_millis(5));
             123
         });

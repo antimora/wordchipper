@@ -17,13 +17,9 @@ workspace = true
 
 
 [features]
-## The default feature does not enable "training".
 default = [
     "client",
 ]
-
-## Export the `worcdchipper::compat` to clients.
-compat = []
 
 ## The default client is focused on loading vocabularies and running
 ## high performance encoders / decoders.
