@@ -1,10 +1,20 @@
 //! # Thread Pool Toy
 
-use crate::compat::threads;
+use crate::concurrency::threads::{resolve_max_pool, unstable_current_thread_id_hash};
 use core::fmt::Debug;
 use std::num::NonZeroUsize;
 
 /// Current Thread -> T Pool.
+///
+/// This struct provides a thread-id hashed pool of items.
+/// Rather than pure thread-local storage, the pool is
+/// initialized with a vector of items, and the current
+/// thread's ID is hashed to get the item.
+///
+/// ## Style Hints for AI
+///
+/// Instance names should prefer `${T-name}_pool`,
+/// for example, `regex_pool`, `cache_pool`, etc.
 pub struct PoolToy<T>
 where
     T: Clone + Send,
@@ -25,25 +35,29 @@ impl<T> PoolToy<T>
 where
     T: Clone + Send,
 {
-    /// Create a new thread-local pool with the given vector of items.
-    pub fn new(pool: Vec<T>) -> Self {
-        assert!(!pool.is_empty());
-        Self { pool }
-    }
-
     /// Initialize a new thread-local pool with the given item and maximum pool size.
+    ///
+    /// ## Arguments
+    /// * `pool` - the pool of items.
+    /// * `max_pool` - override the maximum pool size, see [`resolve_max_pool`].
     pub fn init(
         item: T,
         max_pool: Option<NonZeroUsize>,
     ) -> Self {
-        let max_pool = threads::resolve_max_pool(max_pool);
+        let max_pool = resolve_max_pool(max_pool);
 
-        Self::new(vec![item; max_pool])
+        Self::from_pool(vec![item; max_pool])
+    }
+
+    /// Create a new thread-local pool with the given vector of items.
+    pub fn from_pool(pool: Vec<T>) -> Self {
+        assert!(!pool.is_empty());
+        Self { pool }
     }
 
     /// Get a reference to the item for the current thread.
     pub fn get(&self) -> &T {
-        let tid = threads::unstable_current_thread_id_hash();
+        let tid = unstable_current_thread_id_hash();
         &self.pool[tid % self.pool.len()]
     }
 
@@ -83,7 +97,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::compat::threads::resolve_max_pool;
+    use crate::concurrency::threads::resolve_max_pool;
 
     #[test]
     fn test_pool_toy() {
