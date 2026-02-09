@@ -45,12 +45,12 @@
 //!     let vocab: UnifiedTokenVocab<u32> = model.load(&mut disk_cache)?;
 //!
 //!     let encoder: DefaultTokenEncoder<u32> = DefaultTokenEncoder::new(vocab.clone(), None);
-//!     // #[cfg(feature = "rayon"]
-//!     // let encoder = wordchipper::rayon::ParallelRayonEncoder::new(encoder);
+//!     #[cfg(feature = "rayon")]
+//!     let encoder = wordchipper::concurrency::rayon::ParallelRayonEncoder::new(encoder);
 //!
 //!     let decoder: DefaultTokenDecoder<u32> = DefaultTokenDecoder::from_unified_vocab(vocab);
-//!     // #[cfg(feature = "rayon"]
-//!     // let decoder = wordchipper::rayon::ParallelRayonDecoder::new(decoder);
+//!     #[cfg(feature = "rayon")]
+//!     let decoder = wordchipper::concurrency::rayon::ParallelRayonDecoder::new(decoder);
 //!
 //!     Ok((Arc::new(encoder), Arc::new(decoder)))
 //! }
