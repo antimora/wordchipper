@@ -1,10 +1,18 @@
 //! # Unified Token Vocabulary
 
-use crate::alloc::vec::Vec;
-use crate::spanning::TextSpanningConfig;
-use crate::types::{CommonHashSet, Pair, TokenType};
-use crate::vocab::{
-    ByteMapVocab, PairMapVocab, SpanMapVocab, SpanTokenMap, SpecialVocab, TokenSpanMap, TokenVocab,
+use crate::{
+    alloc::vec::Vec,
+    spanning::TextSpanningConfig,
+    types::{CommonHashSet, Pair, TokenType},
+    vocab::{
+        ByteMapVocab,
+        PairMapVocab,
+        SpanMapVocab,
+        SpanTokenMap,
+        SpecialVocab,
+        TokenSpanMap,
+        TokenVocab,
+    },
 };
 
 /// Unified token vocabulary.
@@ -208,10 +216,13 @@ impl<T: TokenType> TokenVocab<T> for UnifiedTokenVocab<T> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::spanning::TextSpanningConfig;
-    use crate::vocab::{PairTokenMap, SpanMapVocab};
     use num_traits::FromPrimitive;
+
+    use super::*;
+    use crate::{
+        spanning::TextSpanningConfig,
+        vocab::{PairTokenMap, SpanMapVocab},
+    };
 
     #[test]
     fn test_init() {

@@ -1,8 +1,11 @@
 //! # Token Span Buffer
 
-use crate::types::{Pair, TokenType};
-use crate::vocab::ByteMapVocab;
 use core::hash::Hash;
+
+use crate::{
+    types::{Pair, TokenType},
+    vocab::ByteMapVocab,
+};
 
 /// A mutable span of tokens (a chunk or "word").
 ///
@@ -19,6 +22,9 @@ impl<T: TokenType, S: AsRef<[T]>> From<S> for TokenSpanBuf<T> {
 }
 
 impl<T: TokenType> TokenSpanBuf<T> {
+    const DEC: i32 = -1;
+    const INC: i32 = 1;
+
     /// Create a new span buffer from tokens.
     pub fn from_tokens<S>(tokens: S) -> Self
     where
@@ -83,9 +89,6 @@ impl<T: TokenType> TokenSpanBuf<T> {
     pub fn shrink_to_fit(&mut self) {
         self.tokens.shrink_to_fit();
     }
-
-    const INC: i32 = 1;
-    const DEC: i32 = -1;
 
     /// Merge all non-overlapping occurrences of `pair -> replacement`.
     ///

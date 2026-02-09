@@ -1,9 +1,6 @@
 //! # Parallel Encoder
 
-use crate::encoders::TokenEncoder;
-use crate::spanning::TextSpanner;
-use crate::types::TokenType;
-use crate::vocab::SpecialVocab;
+use crate::{encoders::TokenEncoder, spanning::TextSpanner, types::TokenType, vocab::SpecialVocab};
 
 /// Batch-Level Parallel Encoder Wrapper.
 ///
@@ -76,10 +73,15 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::concurrency::rayon::rayon_encoder::ParallelRayonEncoder;
-    use crate::encoders::testing::{common_encoder_test_vocab, common_encoder_tests};
-    use crate::encoders::{DefaultTokenEncoder, TokenEncoder};
-    use crate::types::TokenType;
+    use crate::{
+        concurrency::rayon::rayon_encoder::ParallelRayonEncoder,
+        encoders::{
+            DefaultTokenEncoder,
+            TokenEncoder,
+            testing::{common_encoder_test_vocab, common_encoder_tests},
+        },
+        types::TokenType,
+    };
 
     fn test_encoder<T: TokenType>() {
         let vocab = common_encoder_test_vocab();

@@ -1,9 +1,11 @@
 //! # Dictionary ``{ T -> Vec<u8> }`` Token Decoder
 
-use crate::alloc::vec::Vec;
-use crate::decoders::{DecodeResult, TokenDecoder};
-use crate::types::TokenType;
-use crate::vocab::{DEFAULT_BYTE_PER_TOKEN_RATIO, TokenSpanMap, UnifiedTokenVocab};
+use crate::{
+    alloc::vec::Vec,
+    decoders::{DecodeResult, TokenDecoder},
+    types::TokenType,
+    vocab::{DEFAULT_BYTE_PER_TOKEN_RATIO, TokenSpanMap, UnifiedTokenVocab},
+};
 
 /// A [`TokenDecoder<T>`] over a unified `{ T -> Vec<u8> }` dictionary.
 ///
@@ -101,12 +103,15 @@ impl<T: TokenType> TokenDecoder<T> for TokenDictDecoder<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::decoders::utility::testing::common_decoder_unit_test;
-    use crate::pretrained::openai::patterns::OA_GPT3_CL100K_WORD_PATTERN;
-    use crate::spanning::TextSpanningConfig;
-    use crate::vocab::UnifiedTokenVocab;
-    use crate::vocab::utility::testing::build_test_shift_byte_vocab;
-    use crate::vocab::utility::testing::build_test_vocab;
+    use crate::{
+        decoders::utility::testing::common_decoder_unit_test,
+        pretrained::openai::patterns::OA_GPT3_CL100K_WORD_PATTERN,
+        spanning::TextSpanningConfig,
+        vocab::{
+            UnifiedTokenVocab,
+            utility::testing::{build_test_shift_byte_vocab, build_test_vocab},
+        },
+    };
 
     #[test]
     fn test_dictionary_decoder() {

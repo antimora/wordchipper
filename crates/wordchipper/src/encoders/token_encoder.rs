@@ -1,9 +1,11 @@
 //! # Token Encoder Trait
 
-use crate::alloc::vec::Vec;
-use crate::spanning::TextSpanner;
-use crate::types::TokenType;
-use crate::vocab::{DEFAULT_BYTE_PER_TOKEN_RATIO, SpecialVocab};
+use crate::{
+    alloc::vec::Vec,
+    spanning::TextSpanner,
+    types::TokenType,
+    vocab::{DEFAULT_BYTE_PER_TOKEN_RATIO, SpecialVocab},
+};
 
 /// The common trait for `String/&[u8] -> Vec<T>` encoders.
 ///

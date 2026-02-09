@@ -1,11 +1,11 @@
 //! # Pair Map ``{ (T, T) -> T }`` Token Vocabulary
 
-use crate::alloc::vec::Vec;
-use crate::decoders::TokenDecoder;
-use crate::decoders::utility::PairExpansionDecoder;
-use crate::types::{CommonHashSet, Pair, TokenType};
-use crate::vocab::utility::validators::try_vocab_size;
-use crate::vocab::{ByteMapVocab, PairTokenMap, TokenVocab};
+use crate::{
+    alloc::vec::Vec,
+    decoders::{TokenDecoder, utility::PairExpansionDecoder},
+    types::{CommonHashSet, Pair, TokenType},
+    vocab::{ByteMapVocab, PairTokenMap, TokenVocab, utility::validators::try_vocab_size},
+};
 
 /// Validate that a [`ByteMapVocab`] and [`PairTokenMap`] are compatible.
 ///

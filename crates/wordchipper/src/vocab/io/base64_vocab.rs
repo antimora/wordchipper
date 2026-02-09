@@ -1,13 +1,15 @@
 //! # Tiktoken Vocabulary IO
 
-use crate::types::TokenType;
-use crate::vocab::vocab_types::SpanTokenMap;
+use std::{
+    fs::File,
+    io::{BufRead, BufReader, BufWriter, Write},
+    path::Path,
+};
+
 use anyhow::Context;
-use base64::Engine;
-use base64::prelude::BASE64_STANDARD;
-use std::fs::File;
-use std::io::{BufRead, BufReader, BufWriter, Write};
-use std::path::Path;
+use base64::{Engine, prelude::BASE64_STANDARD};
+
+use crate::{types::TokenType, vocab::vocab_types::SpanTokenMap};
 
 /// Load a [`SpanTokenMap`] from a base64 vocab file.
 ///

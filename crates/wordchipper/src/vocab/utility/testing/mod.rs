@@ -1,9 +1,11 @@
 //! # Vocab Testing Tools
 
-use crate::alloc::vec::Vec;
-use crate::spanning::TextSpanningConfig;
-use crate::types::TokenType;
-use crate::vocab::{ByteMapVocab, SpanMapVocab, SpanTokenMap, UnifiedTokenVocab};
+use crate::{
+    alloc::vec::Vec,
+    spanning::TextSpanningConfig,
+    types::TokenType,
+    vocab::{ByteMapVocab, SpanMapVocab, SpanTokenMap, UnifiedTokenVocab},
+};
 
 /// Create a test [`UnifiedTokenVocab`].
 pub fn build_test_vocab<T: TokenType, C>(

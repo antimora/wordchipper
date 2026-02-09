@@ -1,16 +1,33 @@
 //! # Vocab Trainer
 
-use crate::regex::RegexWrapperPattern;
-use crate::training::utility::{
-    PairIndexMap, PairSpanIndex, TextSpanCounter, TextSpanCounterOptions, TokenSpanBuf,
-};
-use crate::training::{CountType, StringChunkType};
-use crate::types::{CommonHashMap, CommonHashSet, Pair, TokenType};
-use crate::vocab::utility::validators::{U8_SIZE, expect_vocab_size};
-use crate::vocab::{ByteMapVocab, PairMapVocab, PairTokenMap, TokenVocab, UnifiedTokenVocab};
-use compact_str::CompactString;
 use core::cmp::Ordering;
+
+use compact_str::CompactString;
 use dary_heap::OctonaryHeap;
+
+use crate::{
+    regex::RegexWrapperPattern,
+    training::{
+        CountType,
+        StringChunkType,
+        utility::{
+            PairIndexMap,
+            PairSpanIndex,
+            TextSpanCounter,
+            TextSpanCounterOptions,
+            TokenSpanBuf,
+        },
+    },
+    types::{CommonHashMap, CommonHashSet, Pair, TokenType},
+    vocab::{
+        ByteMapVocab,
+        PairMapVocab,
+        PairTokenMap,
+        TokenVocab,
+        UnifiedTokenVocab,
+        utility::validators::{U8_SIZE, expect_vocab_size},
+    },
+};
 
 /// Options for [`BinaryPairVocabTrainer`].
 #[derive(Debug, Clone)]
@@ -397,15 +414,18 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::compat::traits::static_is_send_sync_check;
-    use crate::decoders::{TokenDecoder, TokenDictDecoder};
-    use crate::encoders::{DefaultTokenEncoder, TokenEncoder};
-    use crate::pretrained::openai::patterns::OA_GPT3_CL100K_WORD_PATTERN;
-    use crate::training::BinaryPairVocabTrainerOptions;
-    use crate::training::bpe_trainer::MergeJob;
-    use crate::vocab::{ByteMapVocab, UnifiedTokenVocab};
-    use compact_str::CompactString;
     use core::cmp::Ordering;
+
+    use compact_str::CompactString;
+
+    use crate::{
+        compat::traits::static_is_send_sync_check,
+        decoders::{TokenDecoder, TokenDictDecoder},
+        encoders::{DefaultTokenEncoder, TokenEncoder},
+        pretrained::openai::patterns::OA_GPT3_CL100K_WORD_PATTERN,
+        training::{BinaryPairVocabTrainerOptions, bpe_trainer::MergeJob},
+        vocab::{ByteMapVocab, UnifiedTokenVocab},
+    };
 
     #[test]
     fn test_tokenizer_options() {

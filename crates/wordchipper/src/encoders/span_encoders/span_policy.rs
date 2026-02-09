@@ -1,8 +1,6 @@
 //! # Policy Trait for [`SpanEncoder`]s.
 
-use crate::alloc::vec::Vec;
-use crate::types::TokenType;
-use crate::vocab::UnifiedTokenVocab;
+use crate::{alloc::vec::Vec, types::TokenType, vocab::UnifiedTokenVocab};
 
 /// The Span encoder trait for [`super::CompoundSpanVocabEncoder`].
 pub trait SpanPolicy<T: TokenType>: Default {

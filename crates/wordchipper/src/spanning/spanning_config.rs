@@ -1,7 +1,5 @@
 //! # Text Spanner Configuration
-use crate::regex::RegexWrapperPattern;
-use crate::types::TokenType;
-use crate::vocab::SpecialVocab;
+use crate::{regex::RegexWrapperPattern, types::TokenType, vocab::SpecialVocab};
 
 /// Description of text spanning configuration.
 ///
@@ -120,8 +118,10 @@ impl<T: TokenType> TextSpanningConfig<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alloc::string::ToString;
-    use crate::vocab::{SpecialVocab, TokenVocab};
+    use crate::{
+        alloc::string::ToString,
+        vocab::{SpecialVocab, TokenVocab},
+    };
 
     #[test]
     fn test_from_pattern() {

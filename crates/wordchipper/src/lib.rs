@@ -14,7 +14,6 @@
 //! * [`pretrained`]
 //!
 //! ## Crate Features
-//!
 #![doc = document_features::document_features!()]
 #![warn(missing_docs, unused)]
 #![cfg_attr(not(feature = "std"), no_std)]

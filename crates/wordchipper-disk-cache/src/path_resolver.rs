@@ -2,9 +2,12 @@
 //!
 //! Static library defaults for cache/data directory resolution.
 
+use std::{
+    env,
+    path::{Path, PathBuf},
+};
+
 use directories_next::ProjectDirs;
-use std::env;
-use std::path::{Path, PathBuf};
 
 /// Static configuration for application path resolution.
 pub struct PathResolver {
@@ -105,8 +108,9 @@ impl PathResolver {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use serial_test::serial;
+
+    use super::*;
 
     const CACHE_ENV1: &str = "_APP_PATH_CACHE_ENV1";
     const CACHE_ENV2: &str = "_APP_PATH_CACHE_ENV2";

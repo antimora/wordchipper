@@ -23,5 +23,8 @@ mod regex_wrapper;
 pub use exact_match_union::alternate_choice_regex_pattern;
 #[doc(inline)]
 pub use regex_wrapper::{
-    ConstRegexWrapperPattern, ErrorWrapper, RegexWrapper, RegexWrapperPattern,
+    ConstRegexWrapperPattern,
+    ErrorWrapper,
+    RegexWrapper,
+    RegexWrapperPattern,
 };

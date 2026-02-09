@@ -1,11 +1,17 @@
 //! # Thread Pool Toy
 
-use crate::concurrency::threads::{resolve_max_pool, unstable_current_thread_id_hash};
-use crate::types::CommonHashSet;
 use core::fmt::Debug;
+use std::{
+    num::NonZeroUsize,
+    sync::atomic::{AtomicUsize, Ordering},
+};
+
 use parking_lot::lock_api::RwLock;
-use std::num::NonZeroUsize;
-use std::sync::atomic::{AtomicUsize, Ordering};
+
+use crate::{
+    concurrency::threads::{resolve_max_pool, unstable_current_thread_id_hash},
+    types::CommonHashSet,
+};
 
 /// Experimental LRU-based variant of [`crate::concurrency::PoolToy`].
 ///

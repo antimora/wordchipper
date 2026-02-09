@@ -1,10 +1,13 @@
 //! # Special Tokens
 
-use crate::alloc::string::String;
-use crate::alloc::string::ToString;
-use crate::alloc::vec::Vec;
-use crate::declare_carrot_special;
-use crate::vocab::utility::specials_tools::format_reserved_carrot;
+use crate::{
+    alloc::{
+        string::{String, ToString},
+        vec::Vec,
+    },
+    declare_carrot_special,
+    vocab::utility::format_reserved_carrot,
+};
 
 declare_carrot_special!(
     (STARTOFTEXT, "startoftext"),

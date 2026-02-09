@@ -8,10 +8,11 @@
 //! ## Example
 //!
 //! ```rust,no_run
-//! use wordchipper::vocab::UnifiedTokenVocab;
-//! use wordchipper::decoders::TokenDictDecoder;
-//! use wordchipper::decoders::TokenDecoder;
-//! use wordchipper::types::TokenType;
+//! use wordchipper::{
+//!     decoders::{TokenDecoder, TokenDictDecoder},
+//!     types::TokenType,
+//!     vocab::UnifiedTokenVocab,
+//! };
 //!
 //! fn example<T: TokenType>(
 //!     vocab: UnifiedTokenVocab<T>,
@@ -24,7 +25,10 @@
 //!
 //!     let slices: Vec<&[T]> = batch.iter().map(|v| v.as_ref()).collect();
 //!
-//!     decoder.try_decode_batch_to_strings(&slices).unwrap().unwrap()
+//!     decoder
+//!         .try_decode_batch_to_strings(&slices)
+//!         .unwrap()
+//!         .unwrap()
 //! }
 //! ```
 

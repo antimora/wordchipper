@@ -1,13 +1,13 @@
 //! # Common Decoder Unit Tests
 
-use crate::alloc::vec;
-use crate::alloc::vec::Vec;
-use crate::compat::strings::string_from_utf8_lossy;
-use crate::compat::traits::static_is_send_sync_check;
-use crate::decoders::TokenDecoder;
-use crate::encoders::{DefaultTokenEncoder, TokenEncoder};
-use crate::types::TokenType;
-use crate::vocab::{TokenVocab, UnifiedTokenVocab};
+use crate::{
+    alloc::{vec, vec::Vec},
+    compat::{strings::string_from_utf8_lossy, traits::static_is_send_sync_check},
+    decoders::TokenDecoder,
+    encoders::{DefaultTokenEncoder, TokenEncoder},
+    types::TokenType,
+    vocab::{TokenVocab, UnifiedTokenVocab},
+};
 
 /// Common Unittest for TokenDecoder implementations.
 pub fn common_decoder_unit_test<T: TokenType, D: TokenDecoder<T>>(

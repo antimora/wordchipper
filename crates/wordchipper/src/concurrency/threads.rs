@@ -1,9 +1,7 @@
 //! # Thread Utilities
 
-use core::num::NonZeroU64;
-use core::str::FromStr;
-use std::num::NonZeroUsize;
-use std::{env, thread};
+use core::{num::NonZeroU64, str::FromStr};
+use std::{env, num::NonZeroUsize, thread};
 
 /// Current Thread -> u64 Pool.
 ///
@@ -61,9 +59,10 @@ pub fn resolve_max_pool(max_pool: Option<NonZeroUsize>) -> usize {
 
 #[cfg(test)]
 mod tests {
+    use serial_test::serial;
+
     use super::*;
     use crate::types::CommonHashMap;
-    use serial_test::serial;
 
     #[test]
     #[serial]

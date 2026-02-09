@@ -8,10 +8,11 @@
 //! ## Example
 //!
 //! ```rust,no_run
-//! use wordchipper::vocab::UnifiedTokenVocab;
-//! use wordchipper::encoders::DefaultTokenEncoder;
-//! use wordchipper::encoders::TokenEncoder;
-//! use wordchipper::types::TokenType;
+//! use wordchipper::{
+//!     encoders::{DefaultTokenEncoder, TokenEncoder},
+//!     types::TokenType,
+//!     vocab::UnifiedTokenVocab,
+//! };
 //!
 //! fn example<T: TokenType>(
 //!     vocab: UnifiedTokenVocab<T>,

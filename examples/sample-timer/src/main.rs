@@ -1,24 +1,28 @@
+use std::{io, io::IsTerminal, iter::Iterator, time::Duration};
+
 use anyhow::bail;
 use arrow::array::{Array, StringArray};
-use clap::Parser;
-use clap::builder::{PossibleValuesParser, TypedValueParser};
+use clap::{
+    Parser,
+    builder::{PossibleValuesParser, TypedValueParser},
+};
 use indicatif::ProgressBar;
 use once_cell::sync::Lazy;
 use rayon::prelude::*;
-use std::io;
-use std::io::IsTerminal;
-use std::iter::Iterator;
-use std::time::Duration;
 use strum::IntoEnumIterator;
 use tiktoken_rs::{CoreBPE, Rank};
-use wordchipper::compat::slices::{inner_slice_view, inner_str_view};
-use wordchipper::compat::timers::timeit;
-use wordchipper::concurrency::rayon::{ParallelRayonDecoder, ParallelRayonEncoder};
-use wordchipper::decoders::{DefaultTokenDecoder, TokenDecoder};
-use wordchipper::disk_cache::WordchipperDiskCache;
-use wordchipper::encoders::{DefaultTokenEncoder, TokenEncoder};
-use wordchipper::pretrained::openai::OATokenizer;
-use wordchipper::vocab::UnifiedTokenVocab;
+use wordchipper::{
+    compat::{
+        slices::{inner_slice_view, inner_str_view},
+        timers::timeit,
+    },
+    concurrency::rayon::{ParallelRayonDecoder, ParallelRayonEncoder},
+    decoders::{DefaultTokenDecoder, TokenDecoder},
+    disk_cache::WordchipperDiskCache,
+    encoders::{DefaultTokenEncoder, TokenEncoder},
+    pretrained::openai::OATokenizer,
+    vocab::UnifiedTokenVocab,
+};
 use wordchipper_data::dataset::{DatasetCache, DatasetCacheConfig};
 
 /// Side-by-Side Wordchipper vs Tiktoken Benchmark.

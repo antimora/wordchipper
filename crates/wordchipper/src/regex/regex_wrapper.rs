@@ -1,10 +1,12 @@
 //! # Regex Wrapper
 //! This modules provides mechanisms to mix `regex` and `fancy_regex` types.
 
-use crate::alloc::boxed::Box;
-use crate::alloc::string::String;
-use crate::alloc::string::ToString;
 use core::fmt::Debug;
+
+use crate::alloc::{
+    boxed::Box,
+    string::{String, ToString},
+};
 
 /// Error wrapper for regex patterns.
 #[non_exhaustive]
@@ -282,8 +284,7 @@ impl<'r, 'h> Iterator for MatchesWrapper<'r, 'h> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alloc::format;
-    use crate::join_patterns;
+    use crate::{alloc::format, join_patterns};
 
     #[test]
     fn test_partial_eq() {

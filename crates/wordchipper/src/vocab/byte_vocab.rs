@@ -1,10 +1,12 @@
 //! # Byte/Token Mapping Table
 
-use crate::alloc::vec;
-use crate::alloc::vec::Vec;
-use crate::types::{CommonHashSet, TokenType};
-use crate::vocab::{ByteTokenArray, ByteTokenMap, TokenByteMap, TokenVocab};
 use core::fmt::Debug;
+
+use crate::{
+    alloc::{vec, vec::Vec},
+    types::{CommonHashSet, TokenType},
+    vocab::{ByteTokenArray, ByteTokenMap, TokenByteMap, TokenVocab},
+};
 
 /// ``0..=255`` Rank Byte/Token Bijection Table
 ///
@@ -198,8 +200,7 @@ impl<T: TokenType> TokenVocab<T> for ByteMapVocab<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alloc::format;
-    use crate::vocab::utility::testing::build_test_shift_byte_vocab;
+    use crate::{alloc::format, vocab::utility::testing::build_test_shift_byte_vocab};
 
     #[test]
     fn test_byte_vocab_default() {

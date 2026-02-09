@@ -1,8 +1,8 @@
 //! # `TokenDecoder` Result Types
-//!
+
+use core::fmt::Debug;
 
 use crate::alloc::vec::Vec;
-use core::fmt::Debug;
 
 /// The result of decoding tokens into bytes.
 #[derive(Debug)]
@@ -154,8 +154,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alloc::string::ToString;
-    use crate::alloc::vec;
+    use crate::alloc::{string::ToString, vec};
 
     #[test]
     fn test_decode_result_new() {

@@ -1,14 +1,15 @@
 //! # Text Spanner
 
-use crate::alloc::string::String;
-use crate::alloc::vec::Vec;
-use crate::compat::ranges::offset_range;
-use crate::regex::{RegexWrapper, RegexWrapperPattern, alternate_choice_regex_pattern};
-use crate::spanning::spanning_config::TextSpanningConfig;
-use crate::types::TokenType;
-use crate::vocab::{DEFAULT_BYTE_PER_TOKEN_RATIO, TokenVocab};
-use core::num::NonZeroUsize;
-use core::ops::Range;
+use core::{num::NonZeroUsize, ops::Range};
+
+use crate::{
+    alloc::{string::String, vec::Vec},
+    compat::ranges::offset_range,
+    regex::{RegexWrapper, RegexWrapperPattern, alternate_choice_regex_pattern},
+    spanning::spanning_config::TextSpanningConfig,
+    types::TokenType,
+    vocab::{DEFAULT_BYTE_PER_TOKEN_RATIO, TokenVocab},
+};
 
 /// Span Label/Range Reference for [`TextSpanner`].
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -330,8 +331,7 @@ impl TextSpanner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alloc::vec;
-    use crate::pretrained::openai::patterns::OA_GPT3_CL100K_WORD_PATTERN;
+    use crate::{alloc::vec, pretrained::openai::patterns::OA_GPT3_CL100K_WORD_PATTERN};
 
     #[test]
     fn test_spanref() {

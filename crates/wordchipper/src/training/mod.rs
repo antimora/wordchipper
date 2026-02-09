@@ -31,13 +31,14 @@
 //! - Training a `nanochat` equivalent tokenizer takes ~80 CPU minutes.
 //!
 //! ```rust,no_run
-//! use wordchipper::training::{BinaryPairVocabTrainer, BinaryPairVocabTrainerOptions};
-//! use wordchipper::vocab::io::save_tiktoken_vocab_path;
-//! use wordchipper::pretrained::openai::patterns::OA_GPT3_CL100K_WORD_PATTERN;
-//! use wordchipper::vocab::{ByteMapVocab, UnifiedTokenVocab};
-//! use wordchipper::encoders::DefaultTokenEncoder;
-//! use wordchipper::decoders::TokenDictDecoder;
-//! use wordchipper::concurrency::rayon::{ParallelRayonEncoder, ParallelRayonDecoder};
+//! use wordchipper::{
+//!     concurrency::rayon::{ParallelRayonDecoder, ParallelRayonEncoder},
+//!     decoders::TokenDictDecoder,
+//!     encoders::DefaultTokenEncoder,
+//!     pretrained::openai::patterns::OA_GPT3_CL100K_WORD_PATTERN,
+//!     training::{BinaryPairVocabTrainer, BinaryPairVocabTrainerOptions},
+//!     vocab::{ByteMapVocab, UnifiedTokenVocab, io::save_tiktoken_vocab_path},
+//! };
 //!
 //! fn example<I, S>(
 //!     vocab_size: usize,
@@ -54,10 +55,7 @@
 //!     type K = String;
 //!     type C = u64;
 //!
-//!     let options = BinaryPairVocabTrainerOptions::new(
-//!         OA_GPT3_CL100K_WORD_PATTERN,
-//!         vocab_size,
-//!     );
+//!     let options = BinaryPairVocabTrainerOptions::new(OA_GPT3_CL100K_WORD_PATTERN, vocab_size);
 //!
 //!     let mut trainer: BinaryPairVocabTrainer<K, C> = options.init();
 //!
@@ -71,9 +69,8 @@
 //!
 //!     let byte_vocab: ByteMapVocab<T> = Default::default();
 //!
-//!     let vocab: UnifiedTokenVocab<T> = trainer
-//!         .train(byte_vocab.clone())
-//!         .expect("training failed");
+//!     let vocab: UnifiedTokenVocab<T> =
+//!         trainer.train(byte_vocab.clone()).expect("training failed");
 //!
 //!     if let Some(path) = tiktoken_save_path {
 //!         save_tiktoken_vocab_path(&vocab.span_vocab().span_map(), &path)
@@ -95,7 +92,6 @@ mod bpe_trainer;
 mod training_types;
 
 #[doc(inline)]
-pub use training_types::{CountType, StringChunkType};
-
-#[doc(inline)]
 pub use bpe_trainer::{BinaryPairVocabTrainer, BinaryPairVocabTrainerOptions};
+#[doc(inline)]
+pub use training_types::{CountType, StringChunkType};

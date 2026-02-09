@@ -1,7 +1,9 @@
 //! # Token Vocabulary Index
 
-use crate::alloc::vec::Vec;
-use crate::types::{CommonHashSet, TokenType};
+use crate::{
+    alloc::vec::Vec,
+    types::{CommonHashSet, TokenType},
+};
 
 /// Common traits for token vocabularies.
 pub trait TokenVocab<T: TokenType>: Clone + Send + Sync {
