@@ -1,5 +1,5 @@
 [package]
-name = "token-cli"
+name = "sample-timer"
 repository.workspace = true
 rust-version.workspace = true
 edition.workspace = true
@@ -9,10 +9,6 @@ publish = false
 [lints]
 workspace = true
 
-[features]
-default = ["parallel"]
-parallel = []
-
 [dependencies]
 wordchipper-data = { path = "../../crates/wordchipper-data" }
 wordchipper = { path = "../../crates/wordchipper" }
@@ -21,6 +17,8 @@ anyhow = { workspace = true }
 arrow = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 humansize = { workspace = true }
+indicatif = { workspace = true }
+once_cell = { workspace = true }
 rayon = { workspace = true }
-similar = { workspace = true }
+strum = { workspace = true }
 tiktoken-rs = { workspace = true }
