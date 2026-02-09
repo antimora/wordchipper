@@ -3,8 +3,10 @@
 use crate::{WORDCHIPPER_CACHE_CONFIG, path_utils};
 use anyhow::Context;
 use downloader::{Download, Downloader};
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 /// Options for [`WordchipperDiskCache`].
 #[derive(Clone, Default, Debug)]
@@ -195,11 +197,14 @@ impl WordchipperDiskCache {
 
 #[cfg(test)]
 mod tests {
-    use crate::disk_cache::{WordchipperDiskCache, WordchipperDiskCacheOptions};
-    use crate::{WORDCHIPPER_CACHE_CONFIG, WORDCHIPPER_CACHE_DIR, WORDCHIPPER_DATA_DIR};
+    use crate::{
+        WORDCHIPPER_CACHE_CONFIG,
+        WORDCHIPPER_CACHE_DIR,
+        WORDCHIPPER_DATA_DIR,
+        disk_cache::{WordchipperDiskCache, WordchipperDiskCacheOptions},
+    };
     use serial_test::serial;
-    use std::env;
-    use std::path::PathBuf;
+    use std::{env, path::PathBuf};
 
     #[test]
     #[serial]

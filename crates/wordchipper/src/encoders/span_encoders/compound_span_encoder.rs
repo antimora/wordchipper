@@ -1,11 +1,15 @@
 //! # Abstract Base [`TokenEncoder`].
 
-use crate::alloc::vec::Vec;
-use crate::encoders::TokenEncoder;
-use crate::encoders::span_encoders::{MergeHeapSpanPolicy, SpanPolicy};
-use crate::spanning::{SpanRef, TextSpanner};
-use crate::types::TokenType;
-use crate::vocab::{DEFAULT_BYTE_PER_TOKEN_RATIO, SpecialVocab, UnifiedTokenVocab};
+use crate::{
+    alloc::vec::Vec,
+    encoders::{
+        TokenEncoder,
+        span_encoders::{MergeHeapSpanPolicy, SpanPolicy},
+    },
+    spanning::{SpanRef, TextSpanner},
+    types::TokenType,
+    vocab::{DEFAULT_BYTE_PER_TOKEN_RATIO, SpecialVocab, UnifiedTokenVocab},
+};
 use core::num::NonZeroUsize;
 
 /// A [`TokenEncoder`] with pluggable [`SpanPolicy`]s.

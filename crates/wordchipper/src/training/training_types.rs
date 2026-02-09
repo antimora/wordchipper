@@ -1,7 +1,9 @@
 //! # Training Types
-use core::fmt::{Debug, Display};
-use core::hash::Hash;
-use core::ops::{AddAssign, SubAssign};
+use core::{
+    fmt::{Debug, Display},
+    hash::Hash,
+    ops::{AddAssign, SubAssign},
+};
 use num_traits::{FromPrimitive, PrimInt, ToPrimitive};
 
 /// A type that can be used as a string key.

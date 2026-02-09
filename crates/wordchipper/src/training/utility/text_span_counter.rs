@@ -1,10 +1,11 @@
 //! # Word Counter
 
-use crate::regex::RegexWrapper;
-use crate::training::utility::TokenSpanBuf;
-use crate::training::{CountType, StringChunkType};
-use crate::types::{CommonHashMap, TokenType};
-use crate::vocab::ByteMapVocab;
+use crate::{
+    regex::RegexWrapper,
+    training::{CountType, StringChunkType, utility::TokenSpanBuf},
+    types::{CommonHashMap, TokenType},
+    vocab::ByteMapVocab,
+};
 use core::fmt::Debug;
 
 /// Options for [`TextSpanCounter`].
@@ -116,11 +117,11 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::regex::RegexWrapperPattern;
-    use crate::training::CountType;
-    use crate::training::StringChunkType;
-    use crate::training::utility::token_span_buffer::TokenSpanBuf;
-    use crate::vocab::ByteMapVocab;
+    use crate::{
+        regex::RegexWrapperPattern,
+        training::{CountType, StringChunkType, utility::token_span_buffer::TokenSpanBuf},
+        vocab::ByteMapVocab,
+    };
 
     const PATTERN: &str = r"\w+";
 

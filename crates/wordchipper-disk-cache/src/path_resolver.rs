@@ -3,8 +3,10 @@
 //! Static library defaults for cache/data directory resolution.
 
 use directories_next::ProjectDirs;
-use std::env;
-use std::path::{Path, PathBuf};
+use std::{
+    env,
+    path::{Path, PathBuf},
+};
 
 /// Static configuration for application path resolution.
 pub struct PathResolver {

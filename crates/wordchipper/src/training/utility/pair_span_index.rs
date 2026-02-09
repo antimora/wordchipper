@@ -1,8 +1,9 @@
 //! # `PairIndex` Builder
 
-use crate::training::CountType;
-use crate::training::utility::TokenSpanBuf;
-use crate::types::{CommonHashMap, CommonHashSet, Pair, TokenType};
+use crate::{
+    training::{CountType, utility::TokenSpanBuf},
+    types::{CommonHashMap, CommonHashSet, Pair, TokenType},
+};
 
 /// A map from [`Pair`] to its occurrence count.
 pub type PairCountMap<T, C> = CommonHashMap<Pair<T>, C>;
@@ -60,8 +61,7 @@ impl<T: TokenType, C: CountType> PairSpanIndex<T, C> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::training::utility::token_span_buffer::TokenSpanBuf;
-    use crate::vocab::ByteMapVocab;
+    use crate::{training::utility::token_span_buffer::TokenSpanBuf, vocab::ByteMapVocab};
 
     #[test]
     fn test_pair_index_serial_token_u32_count_usize() {

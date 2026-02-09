@@ -1,10 +1,11 @@
 //! # Pair Expansion ``{ T -> (T, T) }`` Token Decoder
 
-use crate::alloc::vec;
-use crate::alloc::vec::Vec;
-use crate::decoders::{DecodeResult, TokenDecoder};
-use crate::types::TokenType;
-use crate::vocab::{ByteMapVocab, DEFAULT_BYTE_PER_TOKEN_RATIO, PairMapVocab, TokenPairMap};
+use crate::{
+    alloc::{vec, vec::Vec},
+    decoders::{DecodeResult, TokenDecoder},
+    types::TokenType,
+    vocab::{ByteMapVocab, DEFAULT_BYTE_PER_TOKEN_RATIO, PairMapVocab, TokenPairMap},
+};
 
 /// A stack-based pair map `{T -> (T, T) }` incremental stack [`TokenDecoder`].
 ///
@@ -108,12 +109,15 @@ impl<T: TokenType> TokenDecoder<T> for PairExpansionDecoder<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::decoders::utility::testing::common_decoder_unit_test;
-    use crate::pretrained::openai::patterns::OA_GPT3_CL100K_WORD_PATTERN;
-    use crate::spanning::TextSpanningConfig;
-    use crate::vocab::UnifiedTokenVocab;
-    use crate::vocab::utility::testing::build_test_shift_byte_vocab;
-    use crate::vocab::utility::testing::build_test_vocab;
+    use crate::{
+        decoders::utility::testing::common_decoder_unit_test,
+        pretrained::openai::patterns::OA_GPT3_CL100K_WORD_PATTERN,
+        spanning::TextSpanningConfig,
+        vocab::{
+            UnifiedTokenVocab,
+            utility::testing::{build_test_shift_byte_vocab, build_test_vocab},
+        },
+    };
 
     #[test]
     fn test_pair_decoder() {

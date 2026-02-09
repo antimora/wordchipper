@@ -3,10 +3,12 @@
 //! Maintains a heap of the best available merges from the pair vocab,
 //! iterates until no more merges remain.
 
-use crate::alloc::vec::Vec;
-use crate::encoders::span_encoders::{CompoundSpanVocabEncoder, SpanPolicy};
-use crate::types::TokenType;
-use crate::vocab::UnifiedTokenVocab;
+use crate::{
+    alloc::vec::Vec,
+    encoders::span_encoders::{CompoundSpanVocabEncoder, SpanPolicy},
+    types::TokenType,
+    vocab::UnifiedTokenVocab,
+};
 
 /// A [`CompoundSpanVocabEncoder`] using [`MergeHeapSpanPolicy`].
 ///
@@ -107,8 +109,10 @@ impl<T: TokenType> SpanPolicy<T> for MergeHeapSpanPolicy<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::encoders::testing::{common_encoder_test_vocab, common_encoder_tests};
-    use crate::types::TokenType;
+    use crate::{
+        encoders::testing::{common_encoder_test_vocab, common_encoder_tests},
+        types::TokenType,
+    };
 
     fn test_encoder<T: TokenType>() {
         let vocab = common_encoder_test_vocab();

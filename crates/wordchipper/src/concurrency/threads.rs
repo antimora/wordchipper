@@ -1,9 +1,7 @@
 //! # Thread Utilities
 
-use core::num::NonZeroU64;
-use core::str::FromStr;
-use std::num::NonZeroUsize;
-use std::{env, thread};
+use core::{num::NonZeroU64, str::FromStr};
+use std::{env, num::NonZeroUsize, thread};
 
 /// Current Thread -> u64 Pool.
 ///

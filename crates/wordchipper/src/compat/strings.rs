@@ -1,8 +1,6 @@
 //! # String Utilities
 
-use crate::alloc::borrow::Cow;
-use crate::alloc::string::String;
-use crate::alloc::vec::Vec;
+use crate::alloc::{borrow::Cow, string::String, vec::Vec};
 
 /// "stable" stub for for [`String::from_utf8_lossy`].
 pub fn string_from_utf8_lossy(v: Vec<u8>) -> String {
@@ -21,8 +19,7 @@ pub fn string_from_utf8_lossy(v: Vec<u8>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alloc::string::ToString;
-    use crate::alloc::vec;
+    use crate::alloc::{string::ToString, vec};
 
     #[test]
     fn test_string_from_lossy_utf8() {

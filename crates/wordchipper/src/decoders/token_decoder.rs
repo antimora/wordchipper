@@ -1,10 +1,11 @@
 //! # Token Decoder Trait
 
-use crate::alloc::string::String;
-use crate::alloc::vec::Vec;
-use crate::compat::strings::string_from_utf8_lossy;
-use crate::decoders::{BatchDecodeResult, DecodeResult};
-use crate::types::TokenType;
+use crate::{
+    alloc::{string::String, vec::Vec},
+    compat::strings::string_from_utf8_lossy,
+    decoders::{BatchDecodeResult, DecodeResult},
+    types::TokenType,
+};
 
 /// The common trait for `&[T] -> Vec<u8>/String>` decoders.
 ///
@@ -89,9 +90,10 @@ pub trait TokenDecoder<T: TokenType>: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alloc::string::ToString;
-    use crate::alloc::vec;
-    use crate::decoders::utility::ByteDecoder;
+    use crate::{
+        alloc::{string::ToString, vec},
+        decoders::utility::ByteDecoder,
+    };
     use num_traits::FromPrimitive;
 
     #[test]

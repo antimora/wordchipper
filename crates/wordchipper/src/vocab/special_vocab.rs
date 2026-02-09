@@ -1,9 +1,10 @@
 //! # Special Words Vocabulary
 
-use crate::alloc::vec::Vec;
-use crate::types::{CommonHashSet, TokenType};
-use crate::vocab::utility::validators::try_vocab_size;
-use crate::vocab::{SpanTokenMap, TokenVocab};
+use crate::{
+    alloc::vec::Vec,
+    types::{CommonHashSet, TokenType},
+    vocab::{SpanTokenMap, TokenVocab, utility::validators::try_vocab_size},
+};
 
 /// Token vocabulary for special words.
 ///
@@ -103,6 +104,7 @@ impl<T: TokenType> SpecialVocab<T> {
 
 impl<T: TokenType> TokenVocab<T> for SpecialVocab<T> {
     type Token = T;
+
     fn len(&self) -> usize {
         self.span_map.len()
     }

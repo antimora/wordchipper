@@ -1,18 +1,19 @@
 //! # Encoder Test Utilities
 
-use crate::alloc::string::String;
-use crate::alloc::sync::Arc;
-use crate::alloc::vec;
-use crate::alloc::vec::Vec;
-use crate::compat::slices::inner_slice_view;
-use crate::compat::traits::static_is_send_sync_check;
-use crate::decoders::{TokenDecoder, TokenDictDecoder};
-use crate::encoders::TokenEncoder;
-use crate::pretrained::openai::patterns::OA_GPT3_CL100K_WORD_PATTERN;
-use crate::spanning::TextSpanningConfig;
-use crate::types::TokenType;
-use crate::vocab::utility::testing::{build_test_shift_byte_vocab, build_test_vocab};
-use crate::vocab::{TokenVocab, UnifiedTokenVocab};
+use crate::{
+    alloc::{string::String, sync::Arc, vec, vec::Vec},
+    compat::{slices::inner_slice_view, traits::static_is_send_sync_check},
+    decoders::{TokenDecoder, TokenDictDecoder},
+    encoders::TokenEncoder,
+    pretrained::openai::patterns::OA_GPT3_CL100K_WORD_PATTERN,
+    spanning::TextSpanningConfig,
+    types::TokenType,
+    vocab::{
+        TokenVocab,
+        UnifiedTokenVocab,
+        utility::testing::{build_test_shift_byte_vocab, build_test_vocab},
+    },
+};
 
 /// Build common test vocabulary for [`TokenEncoder`] tests.
 pub fn common_encoder_test_vocab<T: TokenType>() -> UnifiedTokenVocab<T> {

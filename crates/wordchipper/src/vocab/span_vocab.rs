@@ -1,10 +1,17 @@
 //! # Word Map ``{ Vec<u8> -> T }`` Token Vocabulary
 
-use crate::alloc::vec::Vec;
-use crate::types::{CommonHashMap, CommonHashSet, TokenType};
-use crate::vocab::utility::validators::try_vocab_size;
-use crate::vocab::{
-    ByteMapVocab, ByteTokenMap, PairMapVocab, PairTokenMap, SpanTokenMap, TokenVocab,
+use crate::{
+    alloc::vec::Vec,
+    types::{CommonHashMap, CommonHashSet, TokenType},
+    vocab::{
+        ByteMapVocab,
+        ByteTokenMap,
+        PairMapVocab,
+        PairTokenMap,
+        SpanTokenMap,
+        TokenVocab,
+        utility::validators::try_vocab_size,
+    },
 };
 
 /// Token vocabulary as a dictionary map of ``{ Vec<u8> -> T }``.

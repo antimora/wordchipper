@@ -2,9 +2,7 @@
 
 use downloader::{Download, Downloader};
 use parquet::arrow::arrow_reader::{ParquetRecordBatchReader, ParquetRecordBatchReaderBuilder};
-use std::fs;
-use std::fs::File;
-use std::path::PathBuf;
+use std::{fs, fs::File, path::PathBuf};
 
 /// The upstream dataset URL.
 pub const NANOCHAT_TRAIN_BASE_URL: &str =

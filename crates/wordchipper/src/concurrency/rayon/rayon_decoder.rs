@@ -1,7 +1,9 @@
 //! # Parallel Decoder
 
-use crate::decoders::{BatchDecodeResult, DecodeResult, TokenDecoder};
-use crate::types::TokenType;
+use crate::{
+    decoders::{BatchDecodeResult, DecodeResult, TokenDecoder},
+    types::TokenType,
+};
 
 /// Batch-Level Parallel Decoder Wrapper.
 ///
@@ -40,6 +42,7 @@ where
     D: TokenDecoder<T>,
 {
     type Token = T;
+
     fn try_decode_to_bytes(
         &self,
         tokens: &[T],
@@ -77,13 +80,15 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::decoders::utility::PairExpansionDecoder;
-    use crate::decoders::utility::testing::common_decoder_unit_test;
-    use crate::pretrained::openai::patterns::OA_GPT3_CL100K_WORD_PATTERN;
-    use crate::spanning::TextSpanningConfig;
-    use crate::vocab::UnifiedTokenVocab;
-    use crate::vocab::utility::testing::build_test_shift_byte_vocab;
-    use crate::vocab::utility::testing::build_test_vocab;
+    use crate::{
+        decoders::utility::{PairExpansionDecoder, testing::common_decoder_unit_test},
+        pretrained::openai::patterns::OA_GPT3_CL100K_WORD_PATTERN,
+        spanning::TextSpanningConfig,
+        vocab::{
+            UnifiedTokenVocab,
+            utility::testing::{build_test_shift_byte_vocab, build_test_vocab},
+        },
+    };
 
     #[test]
     fn test_rayon_decoder() {

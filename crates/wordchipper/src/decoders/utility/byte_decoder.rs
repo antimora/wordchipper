@@ -2,10 +2,12 @@
 //!
 //! Mainly used for utility.
 
-use crate::alloc::vec::Vec;
-use crate::decoders::{DecodeResult, TokenDecoder};
-use crate::types::TokenType;
-use crate::vocab::{ByteMapVocab, DEFAULT_BYTE_PER_TOKEN_RATIO};
+use crate::{
+    alloc::vec::Vec,
+    decoders::{DecodeResult, TokenDecoder},
+    types::TokenType,
+    vocab::{ByteMapVocab, DEFAULT_BYTE_PER_TOKEN_RATIO},
+};
 
 /// A [`ByteMapVocab`] based [`TokenDecoder`].
 ///
@@ -66,8 +68,7 @@ impl<T: TokenType> TokenDecoder<T> for ByteDecoder<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alloc::vec;
-    use crate::vocab::ByteMapVocab;
+    use crate::{alloc::vec, vocab::ByteMapVocab};
 
     #[test]
     fn test_decode_context() {

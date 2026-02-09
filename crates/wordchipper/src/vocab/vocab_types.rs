@@ -1,7 +1,9 @@
 //! # Vocabulary Types
 
-use crate::alloc::vec::Vec;
-use crate::types::{CommonHashMap, Pair};
+use crate::{
+    alloc::vec::Vec,
+    types::{CommonHashMap, Pair},
+};
 
 /// `{ Pair<T> -> T}` map.
 ///
