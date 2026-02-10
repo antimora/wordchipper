@@ -73,6 +73,9 @@ fn main() -> anyhow::Result<()> {
     };
     let spanner = TextSpanner::from_config(vocab.spanning().clone(), None);
 
+    // TODO: complete batch-observer inversion of control for additional tokenizer wrappers.
+
+    #[allow(clippy::vec_init_then_push)]
     let mut candidates: Vec<Arc<dyn TokenizerWrapper<Rank>>> = Vec::new();
 
     candidates.push(Arc::new(TiktokenWrapper::new(load_tiktoken(args.model)?)));
