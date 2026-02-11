@@ -1,7 +1,5 @@
 //! # Concurrency Utilities
 
-#[cfg(feature = "experimental")]
-pub mod experimental;
 #[cfg(feature = "rayon")]
 pub mod rayon;
 #[cfg(feature = "std")]
