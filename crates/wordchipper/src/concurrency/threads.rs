@@ -1,7 +1,7 @@
 //! # Thread Utilities
 
-use core::{num::NonZeroU64, str::FromStr};
-use std::{env, num::NonZeroUsize, thread};
+use core::num::{NonZeroU64, NonZeroUsize};
+use std::thread;
 
 /// Current Thread -> u64 Pool.
 ///
@@ -38,6 +38,8 @@ pub fn est_max_parallelism() -> usize {
 
     #[cfg(feature = "rayon")]
     for name in RAYON_VARS {
+        use core::str::FromStr;
+        use std::env;
         if let Some(x @ 1..) = env::var(name).ok().and_then(|s| usize::from_str(&s).ok()) {
             return x;
         }
@@ -59,6 +61,8 @@ pub fn resolve_max_pool(max_pool: Option<NonZeroUsize>) -> usize {
 
 #[cfg(test)]
 mod tests {
+    use std::env;
+
     use serial_test::serial;
 
     use super::*;
@@ -67,6 +71,7 @@ mod tests {
     #[test]
     #[serial]
     fn test_est_max_parallelism() {
+        #[allow(unused_mut)]
         let mut orig_env: CommonHashMap<String, Option<String>> = Default::default();
 
         #[cfg(feature = "rayon")]

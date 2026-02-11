@@ -20,15 +20,14 @@ workspace = true
 
 [features]
 default = [
+    "ahash",
     "client",
+    "rayon",
 ]
 
-## The default client is focused on loading vocabularies and running
-## high-performance encoders / decoders.
+## The base set of features needed to load and run pre-trained encoders and decoders.
 client = [
-    "ahash",
     "download",
-    "rayon",
     "std",
 ]
 
@@ -70,12 +69,27 @@ no_std = [
 ## This swaps all HashMap/HashSet implementations for ``ahash``; which is a performance
 ## win on many/(most?) modern CPUs.
 ##
+## If both "ahash" and "foldhash" are enabled, then "ahash" will win.
+##
 ## This is done by the ``types::CommonHash{*}`` type alias machinery.
 ## See also the ``hashbrown`` dep used by ``no_std``.
 ahash = [
     "dep:ahash",
     "std",
 ]
+
+## This swaps all HashMap/HashSet implementations for ``ahash``; which is a performance
+## win on many/(most?) modern CPUs.
+##
+## If both "ahash" and "foldhash" are enabled, then "ahash" will win.
+##
+## This is done by the ``types::CommonHash{*}`` type alias machinery.
+## See also the ``hashbrown`` dep used by ``no_std``.
+foldhash = [
+    "dep:foldhash",
+    "std",
+]
+
 
 ## This enables some parallelism wrappers using the ``rayon`` crate.
 ##
@@ -95,12 +109,6 @@ tracing = [
 ## Enable test utilities for downstream users.
 testing = []
 
-## This enables some experimental features.
-experimental = [
-    "std",
-    "dep:parking_lot",
-    "dep:hashlru",
-]
 
 
 [dependencies]
@@ -119,15 +127,11 @@ base64 = { workspace = true, optional = true }
 strum = { workspace = true, optional = true }
 strum_macros = { workspace = true, optional = true }
 
-# "experimental" feature deps:
-parking_lot = { workspace = true, optional = true }
-hashlru = { workspace = true, optional = true }
-
 # "no_std" feature deps:
 hashbrown = { workspace = true, optional = true }
 
-# "ahash" feature deps:
 ahash = { workspace = true, optional = true }
+foldhash = { workspace = true, optional = true }
 
 # "download" feature deps:
 wordchipper-disk-cache = { version = "0.5.6", path = "../wordchipper-disk-cache", optional = true }

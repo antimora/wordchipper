@@ -11,47 +11,46 @@ This is a high-performance rust BPE tokenizer trainer/encoder/decoder.
 
 The current status is productionization towards an alpha release.
 
-## wordchipper vs tiktoken
-
-Details:
-
-- MacBook Pro 2023 Apple M2 Pro
-- Each shard is ~90MB parquet file.
-- Each encode/decode is compared for equality.
+## Encode/Decode Side-by-Side Benchmarks
 
 ```terminaloutput
- % cargo run --release -p sample-timer -- --dataset-dir ~/datasets        
-   Compiling sample-timer v0.0.0 (/Users/crutcher/git/wordchipper/examples/sample-timer)
-    Finished `release` profile [optimized] target(s) in 1.16s
-     Running `target/release/sample-timer --dataset-dir /Users/crutcher/datasets`
-Model: "oa:o200k_harmony"
-- shards: [0, 1, 2, 3]
-- batch_size: 512
+% RAYON_NUM_THREADS=48 cargo run --release -p sample-timer  -- \
+    --dataset-dir $DATASET_CACHE_DIR --decode
+Args {
+    dataset_dir: "/media/Data/nanochat/dataset",
+    shards: [
+        0,
+        1,
+    ],
+    batch_size: 1024,
+    model: OpenaiO200kHarmony,
+    ignore_missing: true,
+    tiktoken: true,
+    tokenizers: true,
+    decode: false,
+    validate: true,
+    respan_input_for_decode_check: true,
+}
+Model: "openai/o200k_harmony"
 
 Samples Summary:
-- num batches: 208
+- num batches: 104
 - avg bytes/sample: 4777
 - avg bytes/token: 4.8
 
-Encoder Times:
-- wordchipper
-  - batch:      31.0ms
-  - sample:     60.5µs
-  - bps:    75.31 MiB/s
-- tiktoken
-  - batch:      30.5ms
-  - sample:     59.6µs
-  - bps:    76.39 MiB/s
-
-Decoder Times:
-- wordchipper
-  - batch:       2.0ms
-  - sample:      3.9µs
-  - bps:    1.14 GiB/s
-- tiktoken
-  - batch:       1.8ms
-  - sample:      3.5µs
-  - bps:    1.29 GiB/s
+Encoder Batch Timing:
+- "wordchipper"
+  - batch:      36.2ms
+  - sample:     35.3µs
+  - bps:    128.96 MiB/s
+- "tiktoken-rs"
+  - batch:      36.5ms
+  - sample:     35.6µs
+  - bps:    127.86 MiB/s
+- "tokenizers"
+  - batch:     214.7ms
+  - sample:    209.6µs
+  - bps:    21.73 MiB/s
 ```
 
 ## Client Usage
@@ -77,6 +76,8 @@ available to download, cache, and load the vocabulary.
 See: [wordchipper::pretrained::openai::OATokenizer](https://docs.rs/wordchipper/latest/wordchipper/pretrained/openai/enum.OATokenizer.html)
 
 ```rust,no_run
+use std::sync::Arc;
+
 use wordchipper::{
     decoders::{DefaultTokenDecoder, TokenDecoder},
     disk_cache::WordchipperDiskCache,
@@ -84,22 +85,27 @@ use wordchipper::{
     pretrained::openai::OATokenizer,
     vocab::UnifiedTokenVocab,
 };
-use std::sync::Arc;
 
 fn example() -> anyhow::Result<(Arc<dyn TokenEncoder<u32>>, Arc<dyn TokenDecoder<u32>>)> {
     let model = OATokenizer::O200kHarmony;
     let mut disk_cache = WordchipperDiskCache::default();
     let vocab: UnifiedTokenVocab<u32> = model.load(&mut disk_cache)?;
 
-    let encoder: DefaultTokenEncoder<u32> = DefaultTokenEncoder::new(vocab.clone(), None);
+    let encoder: Arc<DefaultTokenEncoder<u32>> =
+        DefaultTokenEncoder::new(vocab.clone(), None).into();
+    let decoder: Arc<DefaultTokenDecoder<u32>> =
+        DefaultTokenDecoder::from_unified_vocab(vocab).into();
+        
     #[cfg(feature = "rayon")]
-    let encoder = wordchipper::concurrency::rayon::ParallelRayonEncoder::new(encoder);
-
-    let decoder: DefaultTokenDecoder<u32> = DefaultTokenDecoder::from_unified_vocab(vocab);
+    use wordchipper::concurrency::rayon::*;
+    
     #[cfg(feature = "rayon")]
-    let decoder = wordchipper::concurrency::rayon::ParallelRayonDecoder::new(decoder);
+    let encoder = Arc::new(ParallelRayonEncoder::new(encoder));
 
-    Ok((Arc::new(encoder), Arc::new(decoder)))
+    #[cfg(feature = "rayon")]
+    let decoder = Arc::new(ParallelRayonDecoder::new(decoder));
+
+    Ok((encoder, decoder))
 }
 ```
 
