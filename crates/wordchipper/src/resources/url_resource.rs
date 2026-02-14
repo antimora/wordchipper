@@ -1,5 +1,10 @@
 //! # Remote Resource Tools
 
+use crate::alloc::{
+    string::{String, ToString},
+    vec::Vec,
+};
+
 /// A resource with a constant URL and optional hash.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ConstUrlResource {
@@ -67,6 +72,7 @@ impl From<ConstKeyedResource> for KeyedResource {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::alloc::{string::ToString, vec};
 
     #[test]
     fn test_keyed_resource() {

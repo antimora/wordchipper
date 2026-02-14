@@ -1,17 +1,22 @@
 //! # Vocab Factory Support
 
+#[cfg(feature = "std")]
 use std::{
     fs::File,
     io::{BufRead, BufReader},
     path::{Path, PathBuf},
 };
 
+#[cfg(feature = "std")]
+use crate::resources::ResourceLoader;
+#[cfg(feature = "std")]
+use crate::vocab::UnifiedTokenVocab;
 use crate::{
+    alloc::{string::String, vec::Vec},
     regex::{ConstRegexWrapperPattern, RegexWrapperPattern},
-    resources::{ConstKeyedResource, ResourceLoader},
+    resources::ConstKeyedResource,
     spanning::TextSpanningConfig,
     types::TokenType,
-    vocab::UnifiedTokenVocab,
 };
 
 /// A pretrained tokenizer bundle.
@@ -30,14 +35,6 @@ pub struct ConstVocabularyFactory {
 }
 
 impl ConstVocabularyFactory {
-    /// Fetch a path to the resource through the loader.
-    pub fn fetch_resource<L: ResourceLoader>(
-        &self,
-        loader: &mut L,
-    ) -> anyhow::Result<PathBuf> {
-        loader.load_resource_path(self.resource.clone())
-    }
-
     /// Get the regex pattern for this tokenizer.
     pub fn pattern(&self) -> RegexWrapperPattern {
         self.pattern.to_pattern()
@@ -56,7 +53,17 @@ impl ConstVocabularyFactory {
         TextSpanningConfig::from_pattern(self.pattern()).with_special_words(self.special_tokens())
     }
 
+    /// Fetch a path to the resource through the loader.
+    #[cfg(feature = "std")]
+    fn fetch_resource<L: ResourceLoader>(
+        &self,
+        loader: &mut L,
+    ) -> anyhow::Result<PathBuf> {
+        loader.load_resource_path(self.resource.clone())
+    }
+
     /// Load the pretrained vocabulary through the loader.
+    #[cfg(feature = "std")]
     pub fn load_vocab<T: TokenType, L: ResourceLoader>(
         &self,
         loader: &mut L,
