@@ -41,29 +41,14 @@ where
     S: SpanPolicy<T>,
 {
     /// The reference vocabulary.
-    pub vocab: UnifiedTokenVocab<T>,
+    vocab: UnifiedTokenVocab<T>,
 
     /// Text Spanner.
-    pub spanner: Arc<dyn TextSpanner>,
+    spanner: Arc<dyn TextSpanner>,
 
     expected_bytes_per_token: f32,
 
     marker: core::marker::PhantomData<fn() -> S>,
-}
-
-impl<T, S> Clone for CompoundSpanVocabEncoder<T, S>
-where
-    T: TokenType,
-    S: SpanPolicy<T>,
-{
-    fn clone(&self) -> Self {
-        Self {
-            vocab: self.vocab.clone(),
-            spanner: self.spanner.clone(),
-            expected_bytes_per_token: self.expected_bytes_per_token,
-            marker: Default::default(),
-        }
-    }
 }
 
 impl<T: TokenType, S: SpanPolicy<T>> CompoundSpanVocabEncoder<T, S> {
