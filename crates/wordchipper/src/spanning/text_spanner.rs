@@ -65,9 +65,9 @@ pub trait TextSpanner: Send + Sync {
     /// ## Returns
     /// * `Some(Range<usize>)` if a special span is found,
     /// * `None` otherwise.
-    fn next_special_span<S: AsRef<str>>(
+    fn next_special_span(
         &self,
-        text: S,
+        text: &str,
     ) -> Option<Range<usize>>;
 
     /// Iterate over all split [`SpanRef`]s in the text.
@@ -84,13 +84,11 @@ pub trait TextSpanner: Send + Sync {
     /// ``(completed, consumed)`` where:
     /// - `consumed` is the number of bytes covered by spans accepted by `f`;
     /// - `completed` is if all spans were accepted.
-    fn for_each_split_span<F>(
+    fn for_each_split_span(
         &self,
         text: &str,
-        f: &mut F,
-    ) -> (bool, usize)
-    where
-        F: FnMut(SpanRef) -> bool;
+        f: &mut dyn FnMut(SpanRef) -> bool,
+    ) -> (bool, usize);
 
     /// Split text into spans.
     ///
@@ -120,11 +118,10 @@ pub trait TextSpanner: Send + Sync {
     ///
     /// ## Returns
     /// The rewritten string.
-    fn remove_gaps<S: AsRef<str>>(
+    fn remove_gaps(
         &self,
-        text: S,
+        text: &str,
     ) -> String {
-        let text = text.as_ref();
         self.split_spans(text)
             .into_iter()
             .filter_map(|m| match m {
@@ -135,9 +132,9 @@ pub trait TextSpanner: Send + Sync {
     }
 
     /// Batch version of [`Self::remove_gaps`]
-    fn batch_remove_gaps<S: AsRef<str>>(
+    fn batch_remove_gaps(
         &self,
-        texts: &[S],
+        texts: &[&str],
     ) -> Vec<String> {
         texts.iter().map(|t| self.remove_gaps(t)).collect()
     }

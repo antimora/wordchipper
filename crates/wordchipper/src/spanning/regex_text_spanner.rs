@@ -139,15 +139,12 @@ impl RegexTextSpanner {
         }
     }
 
-    fn for_each_word<F>(
+    fn for_each_word(
         &self,
         text: &str,
         offset: usize,
-        f: &mut F,
-    ) -> (bool, usize)
-    where
-        F: FnMut(SpanRef) -> bool,
-    {
+        f: &mut dyn FnMut(SpanRef) -> bool,
+    ) -> (bool, usize) {
         let mut last = 0;
         for m in self.word_regex().find_iter(text) {
             let range = m.range();
@@ -184,9 +181,9 @@ impl RegexTextSpanner {
 }
 
 impl TextSpanner for RegexTextSpanner {
-    fn next_special_span<S: AsRef<str>>(
+    fn next_special_span(
         &self,
-        text: S,
+        text: &str,
     ) -> Option<Range<usize>> {
         match self.special_regex() {
             None => None,
@@ -194,14 +191,11 @@ impl TextSpanner for RegexTextSpanner {
         }
     }
 
-    fn for_each_split_span<F>(
+    fn for_each_split_span(
         &self,
         text: &str,
-        f: &mut F,
-    ) -> (bool, usize)
-    where
-        F: FnMut(SpanRef) -> bool,
-    {
+        f: &mut dyn FnMut(SpanRef) -> bool,
+    ) -> (bool, usize) {
         let mut current = text;
         let mut offset = 0;
 
@@ -233,10 +227,19 @@ impl TextSpanner for RegexTextSpanner {
 mod tests {
     use super::*;
     use crate::{
-        alloc::vec,
+        alloc::{boxed::Box, vec},
         pretrained::openai::OA_CL100K_BASE_PATTERN,
         spanning::{SpanRef, TextSpanningConfig},
     };
+
+    #[test]
+    fn test_box() {
+        let config: TextSpanningConfig<u32> = TextSpanningConfig::from_pattern(r"\w+");
+        let _box: Box<dyn TextSpanner> = Box::new(RegexTextSpanner::from_config(
+            config,
+            Some(NonZeroUsize::new(1).unwrap()),
+        ));
+    }
 
     #[test]
     fn test_for_each_split_span() {
