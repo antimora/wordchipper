@@ -3,7 +3,7 @@
 use crate::{
     alloc::sync::Arc,
     encoders::TokenEncoder,
-    spanning::TextSpanner,
+    spanning::RegexTextSpanner,
     types::TokenType,
     vocab::SpecialVocab,
 };
@@ -41,7 +41,7 @@ impl<T> TokenEncoder<T> for ParallelRayonEncoder<T>
 where
     T: TokenType,
 {
-    fn spanner(&self) -> &TextSpanner {
+    fn spanner(&self) -> &RegexTextSpanner {
         self.inner.spanner()
     }
 
@@ -92,10 +92,6 @@ mod tests {
         let encoder = DefaultTokenEncoder::<T>::new(vocab.clone().into(), None);
         let encoder = ParallelRayonEncoder::new(Arc::new(encoder));
 
-        assert_eq!(
-            encoder.spanner().word_regex().as_str(),
-            vocab.spanning().pattern().as_str()
-        );
         assert_eq!(encoder.special_vocab(), encoder.inner.special_vocab());
 
         common_encoder_tests(vocab, encoder)

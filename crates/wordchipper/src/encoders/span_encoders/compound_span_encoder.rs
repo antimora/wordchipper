@@ -8,7 +8,7 @@ use crate::{
         TokenEncoder,
         span_encoders::{MergeHeapSpanPolicy, SpanPolicy},
     },
-    spanning::{SpanRef, TextSpanner},
+    spanning::{RegexTextSpanner, SpanRef, TextSpanner},
     types::TokenType,
     vocab::{DEFAULT_BYTE_PER_TOKEN_RATIO, SpecialVocab, UnifiedTokenVocab},
 };
@@ -19,7 +19,7 @@ use crate::{
 /// predicted by [`CompoundSpanVocabEncoder::predict_token_buffer_size`].
 /// The behavior can be tuned by adjusting the `expected_bytes_per_token` parameter.
 ///
-/// This [`TokenEncoder`] leverages [`TextSpanner`] to split text:
+/// This [`TokenEncoder`] leverages [`RegexTextSpanner`] to split text:
 /// * [`SpanRef::Gap`] spans are ignored.
 /// * [`SpanRef::Special`] spans are encoded using the [`SpecialVocab`].
 /// * [`SpanRef::Word`] spans are:
@@ -44,7 +44,7 @@ where
     pub vocab: UnifiedTokenVocab<T>,
 
     /// Text Spanner.
-    pub spanner: TextSpanner,
+    pub spanner: RegexTextSpanner,
 
     expected_bytes_per_token: f32,
 
@@ -78,7 +78,7 @@ impl<T: TokenType, S: SpanPolicy<T>> CompoundSpanVocabEncoder<T, S> {
         vocab: UnifiedTokenVocab<T>,
         max_pool: Option<NonZeroUsize>,
     ) -> Self {
-        let spanner = TextSpanner::from_config(vocab.spanning().clone(), max_pool);
+        let spanner = RegexTextSpanner::from_config(vocab.spanning().clone(), max_pool);
 
         Self {
             vocab,
@@ -140,7 +140,7 @@ impl<T: TokenType, S: SpanPolicy<T>> CompoundSpanVocabEncoder<T, S> {
 }
 
 impl<T: TokenType, S: SpanPolicy<T>> TokenEncoder<T> for CompoundSpanVocabEncoder<T, S> {
-    fn spanner(&self) -> &TextSpanner {
+    fn spanner(&self) -> &RegexTextSpanner {
         &self.spanner
     }
 

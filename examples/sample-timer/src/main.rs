@@ -28,7 +28,7 @@ use wordchipper::{
     disk_cache::WordchipperDiskCache,
     encoders::DefaultTokenEncoder,
     pretrained::openai::OATokenizer,
-    spanning::TextSpanner,
+    spanning::{RegexTextSpanner, TextSpanner},
     types::TokenType,
     vocab::UnifiedTokenVocab,
 };
@@ -188,7 +188,7 @@ fn main() -> anyhow::Result<()> {
     // println!("Loading wordchipper...");
     let vocab: UnifiedTokenVocab<Rank> = args.model.load_vocab(&mut disk_cache)?;
 
-    let spanner = TextSpanner::from_config(vocab.spanning().clone(), None);
+    let spanner = RegexTextSpanner::from_config(vocab.spanning().clone(), None);
 
     // TODO: complete batch-observer inversion of control for additional tokenizer wrappers.
 

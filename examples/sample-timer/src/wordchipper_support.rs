@@ -3,7 +3,7 @@ use std::sync::Arc;
 use wordchipper::{
     decoders::TokenDecoder,
     encoders::TokenEncoder,
-    spanning::TextSpanner,
+    spanning::RegexTextSpanner,
     types::TokenType,
 };
 
@@ -30,7 +30,7 @@ impl<T: TokenType> WordchipperEngine<T> {
         }
     }
 
-    pub fn spanner(&self) -> &TextSpanner {
+    pub fn spanner(&self) -> &RegexTextSpanner {
         self.encoder.spanner()
     }
 }
