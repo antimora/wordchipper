@@ -127,7 +127,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     if args.time_encode_decode {
-        let encoder: DefaultTokenEncoder<T> = DefaultTokenEncoder::new(vocab.clone(), None);
+        let encoder: DefaultTokenEncoder<T> = DefaultTokenEncoder::init(vocab.clone(), None);
         let encoder = ParallelRayonEncoder::new(Arc::new(encoder));
 
         let decoder = TokenDictDecoder::from_unified_vocab(vocab);

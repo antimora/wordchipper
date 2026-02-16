@@ -20,7 +20,7 @@
 //!     vocab: UnifiedTokenVocab<T>,
 //!     batch: &[&str],
 //! ) -> Vec<Vec<T>> {
-//!     let encoder: DefaultTokenEncoder<T> = DefaultTokenEncoder::new(vocab, None);
+//!     let encoder: DefaultTokenEncoder<T> = DefaultTokenEncoder::init(vocab, None);
 //!
 //!     #[cfg(feature = "rayon")]
 //!     let encoder = wordchipper::concurrency::rayon::ParallelRayonEncoder::new(Arc::new(encoder));

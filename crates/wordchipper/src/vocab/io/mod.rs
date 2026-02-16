@@ -24,7 +24,7 @@
 //!     )
 //!     .expect("failed to load vocab");
 //!
-//!     let encoder: DefaultTokenEncoder<T> = DefaultTokenEncoder::new(vocab.clone(), None);
+//!     let encoder: DefaultTokenEncoder<T> = DefaultTokenEncoder::init(vocab.clone(), None);
 //!     let decoder: DefaultTokenDecoder<T> = DefaultTokenDecoder::from_unified_vocab(vocab);
 //!
 //!     Ok((encoder, decoder))

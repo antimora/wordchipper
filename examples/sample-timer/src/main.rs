@@ -28,7 +28,7 @@ use wordchipper::{
     disk_cache::WordchipperDiskCache,
     encoders::DefaultTokenEncoder,
     pretrained::openai::OATokenizer,
-    spanning::{RegexTextSpanner, TextSpanner},
+    spanning::RegexTextSpanner,
     types::TokenType,
     vocab::UnifiedTokenVocab,
 };
@@ -196,7 +196,7 @@ fn main() -> anyhow::Result<()> {
 
     let wc_engine = {
         let encoder = {
-            let encoder = Arc::new(DefaultTokenEncoder::new(vocab.clone(), None));
+            let encoder = Arc::new(DefaultTokenEncoder::init(vocab.clone(), None));
 
             #[cfg(feature = "rayon")]
             let encoder = Arc::new(wordchipper::concurrency::rayon::ParallelRayonEncoder::new(

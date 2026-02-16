@@ -464,7 +464,7 @@ mod tests {
 
         let vocab: UnifiedTokenVocab<T> = trainer.train(byte_vocab.clone()).unwrap();
 
-        let encoder = DefaultTokenEncoder::<T>::new(vocab.clone(), None);
+        let encoder = DefaultTokenEncoder::<T>::init(vocab.clone(), None);
         static_is_send_sync_check(&encoder);
 
         let decoder = TokenDictDecoder::from_unified_vocab(vocab);

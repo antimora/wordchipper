@@ -46,7 +46,7 @@
 //!     let vocab: UnifiedTokenVocab<u32> = model.load_vocab(&mut disk_cache)?;
 //!
 //!     let encoder: Arc<DefaultTokenEncoder<u32>> =
-//!         DefaultTokenEncoder::new(vocab.clone(), None).into();
+//!         DefaultTokenEncoder::init(vocab.clone(), None).into();
 //!     let decoder: Arc<DefaultTokenDecoder<u32>> =
 //!         DefaultTokenDecoder::from_unified_vocab(vocab).into();
 //!

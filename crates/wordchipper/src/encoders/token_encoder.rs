@@ -1,8 +1,8 @@
 //! # Token Encoder Trait
 
 use crate::{
-    alloc::vec::Vec,
-    spanning::RegexTextSpanner,
+    alloc::{sync::Arc, vec::Vec},
+    spanning::TextSpanner,
     types::TokenType,
     vocab::{DEFAULT_BYTE_PER_TOKEN_RATIO, SpecialVocab},
 };
@@ -17,7 +17,7 @@ use crate::{
 /// when there is a conflict.
 pub trait TokenEncoder<T: TokenType>: Send + Sync {
     /// Return the attached text segmentor.
-    fn spanner(&self) -> &RegexTextSpanner;
+    fn spanner(&self) -> Arc<dyn TextSpanner>;
 
     /// Return the attached special vocab.
     ///
