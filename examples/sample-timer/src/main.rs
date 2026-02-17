@@ -20,13 +20,13 @@ use similar::TextDiff;
 use tiktoken_rs::{CoreBPE, Rank};
 use tiktoken_support::TiktokenRsEngine;
 use wordchipper::{
+    TokenDecoderBuilder,
     compat::{
         slices::{inner_slice_view, inner_str_view},
         timers::timeit,
     },
-    decoders::DefaultTokenDecoder,
     disk_cache::WordchipperDiskCache,
-    encoders::DefaultTokenEncoder,
+    encoders::TokenEncoderBuilder,
     pretrained::openai::OATokenizer,
     spanning::RegexTextSpanner,
     types::TokenType,
@@ -194,35 +194,12 @@ fn main() -> anyhow::Result<()> {
 
     let mut candidate_engines: Vec<Arc<dyn EncDecEngine<Rank>>> = Vec::new();
 
-    let wc_engine = {
-        let encoder = {
-            let encoder = Arc::new(DefaultTokenEncoder::init(vocab.clone(), None));
-
-            #[cfg(feature = "rayon")]
-            let encoder = Arc::new(wordchipper::concurrency::rayon::ParallelRayonEncoder::new(
-                encoder,
-            ));
-
-            encoder
-        };
-        let decoder = {
-            let decoder = Arc::new(DefaultTokenDecoder::from_unified_vocab(vocab.clone()));
-
-            #[cfg(feature = "rayon")]
-            let decoder = Arc::new(wordchipper::concurrency::rayon::ParallelRayonDecoder::new(
-                decoder,
-            ));
-
-            decoder
-        };
-        let wc_engine = Arc::new(WordchipperEngine::<Rank>::new(
-            args.model.to_string(),
-            encoder,
-            decoder,
-        ));
-        candidate_engines.push(wc_engine.clone());
-        wc_engine
-    };
+    let wc_engine = Arc::new(WordchipperEngine::<Rank>::new(
+        args.model.to_string(),
+        TokenEncoderBuilder::new(vocab.clone()).init(),
+        TokenDecoderBuilder::new(vocab.clone()).init(),
+    ));
+    candidate_engines.push(wc_engine.clone());
 
     if args.tiktoken {
         // println!("Loading tiktoken...");

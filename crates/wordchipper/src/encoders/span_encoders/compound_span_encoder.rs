@@ -63,18 +63,19 @@ impl<T: TokenType, S: SpanPolicy<T>> CompoundSpanVocabEncoder<T, S> {
         vocab: UnifiedTokenVocab<T>,
         max_pool: Option<NonZeroUsize>,
     ) -> Self {
-        let spanner = Arc::new(RegexTextSpanner::from_config(
-            vocab.spanning().clone(),
-            max_pool,
-        ));
-
-        Self::new(vocab, spanner)
+        Self::new(
+            Arc::new(RegexTextSpanner::from_config(
+                vocab.spanning().clone(),
+                max_pool,
+            )),
+            vocab,
+        )
     }
 
     /// Create a new encoder.
     pub fn new(
-        vocab: UnifiedTokenVocab<T>,
         spanner: Arc<dyn TextSpanner>,
+        vocab: UnifiedTokenVocab<T>,
     ) -> Self {
         Self {
             vocab,
@@ -174,7 +175,11 @@ mod tests {
 
     fn test_encoder<T: TokenType>() {
         let vocab = common_encoder_test_vocab();
-        let encoder = CompoundSpanVocabEncoder::<T>::init(vocab.clone().into(), None)
+        let spanner = Arc::new(RegexTextSpanner::from_config(
+            vocab.spanning().clone(),
+            None,
+        ));
+        let encoder = CompoundSpanVocabEncoder::<T>::new(spanner, vocab.clone())
             .with_expected_bytes_per_token(7.5);
 
         assert_eq!(encoder.expected_bytes_per_token(), 7.5);
