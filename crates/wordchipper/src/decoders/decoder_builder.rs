@@ -2,7 +2,7 @@
 
 use crate::{
     alloc::sync::Arc,
-    decoders::{TokenDecoder, TokenDictDecoder},
+    decoders::{SlabIndexDecoder, TokenDecoder},
     types::TokenType,
     vocab::UnifiedTokenVocab,
 };
@@ -46,7 +46,7 @@ impl<T: TokenType> TokenDecoderBuilder<T> {
     pub fn init(self) -> Arc<dyn TokenDecoder<T>> {
         #[allow(unused_mut)]
         let mut dec: Arc<dyn TokenDecoder<T>> =
-            Arc::new(TokenDictDecoder::from_unified_vocab(self.vocab));
+            Arc::new(SlabIndexDecoder::from_unified_vocab(self.vocab));
 
         #[cfg(feature = "rayon")]
         if self.parallel {
