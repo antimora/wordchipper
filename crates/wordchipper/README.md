@@ -56,24 +56,23 @@ configuration.
 For a number of pretrained models, simplified constructors are
 available to download, cache, and load the vocabulary.
 
-See: [wordchipper::pretrained::openai::OATokenizer](https://docs.rs/wordchipper/latest/wordchipper/pretrained/openai/enum.OATokenizer.html)
+See: [wordchipper::get_model](
+https://docs.rs/wordchipper/latest/wordchipper/fn.get_model.html)
 
 ```rust,no_run
 use std::sync::Arc;
 
 use wordchipper::{
+    get_model,
     TokenDecoder,
     TokenEncoder,
     UnifiedTokenVocab,
     disk_cache::WordchipperDiskCache,
-    pretrained::openai::OATokenizer,
 };
 
 fn example() -> anyhow::Result<(Arc<dyn TokenEncoder<u32>>, Arc<dyn TokenDecoder<u32>>)> {
     let mut disk_cache = WordchipperDiskCache::default();
-    
-    let model = OATokenizer::O200kHarmony;
-    let vocab: UnifiedTokenVocab<u32> = model.load_vocab(&mut disk_cache)?;
+    let vocab: UnifiedTokenVocab<u32> = get_model("openai/o200k_harmony", &mut disk_cache)?;
 
     let encoder = vocab.to_default_encoder();
     let decoder = vocab.to_default_decoder();
