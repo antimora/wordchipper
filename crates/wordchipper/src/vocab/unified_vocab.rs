@@ -60,7 +60,7 @@ use crate::{
 ///     .parallel(true)
 ///     .build();
 /// ```
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct UnifiedTokenVocab<T: TokenType> {
     /// Text Spanning Configuration
     spanning: TextSpanningConfig<T>,

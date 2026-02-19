@@ -9,18 +9,21 @@
 //! [`RegexTextSpanner`] implements the run-time management of spanning,
 //! as well as any per-thread regex pooling.
 
+mod lexer_spanner;
 mod regex_text_spanner;
-mod span_scanner;
-mod span_scanner_spanner;
+mod span_lexer;
+mod spanner_builder;
 mod spanning_config;
 mod text_spanner;
 
 #[doc(inline)]
+pub use lexer_spanner::*;
+#[doc(inline)]
 pub use regex_text_spanner::*;
 #[doc(inline)]
-pub use span_scanner::*;
+pub use span_lexer::*;
 #[doc(inline)]
-pub use span_scanner_spanner::*;
+pub use spanner_builder::*;
 #[doc(inline)]
 pub use spanning_config::*;
 #[doc(inline)]

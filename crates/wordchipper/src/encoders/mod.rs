@@ -17,7 +17,7 @@
 //!     vocab: UnifiedTokenVocab<T>,
 //!     batch: &[&str],
 //! ) -> Vec<Vec<T>> {
-//!     let encoder = TokenEncoderBuilder::new(vocab.clone()).init();
+//!     let encoder = TokenEncoderBuilder::new(vocab.clone()).build();
 //!
 //!     encoder.try_encode_batch(batch).unwrap()
 //! }

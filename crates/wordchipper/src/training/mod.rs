@@ -79,8 +79,8 @@
 //!         println!("- tiktoken vocab: {path:?}");
 //!     }
 //!
-//!     let encoder = TokenEncoderBuilder::new(vocab.clone()).init();
-//!     let decoder = TokenDictDecoder::from_unified_vocab(vocab.clone());
+//!     let encoder = vocab.to_default_encoder();
+//!     let decoder = vocab.to_default_decoder();
 //! }
 //! ```
 

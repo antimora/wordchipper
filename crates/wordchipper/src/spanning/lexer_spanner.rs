@@ -6,29 +6,20 @@ use crate::{
     alloc::{string::String, vec::Vec},
     compat::ranges::offset_range,
     regex::{RegexPattern, RegexWrapper, alternate_choice_regex_pattern},
-    spanning::{SpanRef, SpanScanner, TextSpanner, TextSpanningConfig},
+    spanning::{SpanLexer, SpanRef, TextSpanner, TextSpanningConfig},
     types::TokenType,
     vocab::VocabIndex,
 };
 
-impl<T: SpanScanner> SpanScanner for Arc<T> {
-    fn next_span(
-        &self,
-        text: &str,
-    ) -> Option<(usize, usize)> {
-        self.as_ref().next_span(text)
-    }
-}
-
 /// Text Spanner with Regex-based word splitting and special word matching.
 #[derive(Clone)]
-pub struct SpanScannerSpanner {
-    word_scanner: Arc<dyn SpanScanner>,
-    special_scanner: Option<Arc<dyn SpanScanner>>,
+pub struct LexerTextSpanner {
+    word_scanner: Arc<dyn SpanLexer>,
+    special_scanner: Option<Arc<dyn SpanLexer>>,
 }
 
-impl SpanScannerSpanner {
-    /// Build a new [`SpanScannerSpanner`] from a [`TextSpanningConfig`].
+impl LexerTextSpanner {
+    /// Build a new [`LexerTextSpanner`] from a [`TextSpanningConfig`].
     ///
     /// ## Arguments
     /// * `config` - The spanning configuration.
@@ -49,7 +40,7 @@ impl SpanScannerSpanner {
         Self::from_patterns(config.pattern().clone(), &specials, max_pool)
     }
 
-    /// Build a new [`SpanScannerSpanner`] from patterns.
+    /// Build a new [`LexerTextSpanner`] from patterns.
     ///
     /// ## Arguments
     /// * `word_pattern` - The word split pattern.
@@ -67,7 +58,7 @@ impl SpanScannerSpanner {
         let word_re: RegexWrapper = word_pattern.into().into();
         let word_re = Arc::new(word_re);
 
-        let special_re: Option<Arc<dyn SpanScanner>> = if specials.is_empty() {
+        let special_re: Option<Arc<dyn SpanLexer>> = if specials.is_empty() {
             None
         } else {
             let pattern = alternate_choice_regex_pattern(specials);
@@ -78,14 +69,14 @@ impl SpanScannerSpanner {
         Self::new(word_re, special_re)
     }
 
-    /// Build a new [`SpanScannerSpanner`] from regex.
+    /// Build a new [`LexerTextSpanner`] from regex.
     ///
     /// ## Arguments
     /// * `word_scanner` - The regex for word splitting.
     /// * `special_scanner` - The optional regex for special word matching.
     pub fn new(
-        word_scanner: Arc<dyn SpanScanner>,
-        special_scanner: Option<Arc<dyn SpanScanner>>,
+        word_scanner: Arc<dyn SpanLexer>,
+        special_scanner: Option<Arc<dyn SpanLexer>>,
     ) -> Self {
         Self {
             word_scanner,
@@ -96,12 +87,11 @@ impl SpanScannerSpanner {
     fn for_each_word(
         &self,
         text: &str,
-        mut offset: usize,
+        offset: usize,
         f: &mut dyn FnMut(SpanRef) -> bool,
     ) -> (bool, usize) {
         let mut last = 0;
-        let mut current = text;
-        while let Some((start, end)) = self.word_scanner.next_span(current) {
+        while let Some((start, end)) = self.word_scanner.next_span(text, last) {
             if last < start {
                 if !f(SpanRef::Gap(offset_range::<usize>(last..start, offset))) {
                     // Leading Gap Exit
@@ -115,14 +105,11 @@ impl SpanScannerSpanner {
                 return (false, last);
             }
             last = end;
-
-            current = &current[end..];
-            offset += end;
         }
 
-        if last < current.len() {
+        if last < text.len() {
             if !f(SpanRef::Gap(offset_range::<usize>(
-                last..current.len(),
+                last..text.len(),
                 offset,
             ))) {
                 // Trailing Gap Exit
@@ -140,12 +127,12 @@ impl SpanScannerSpanner {
     ) -> Option<(usize, usize)> {
         match &self.special_scanner {
             None => None,
-            Some(scanner) => scanner.next_span(text),
+            Some(scanner) => scanner.next_span(text, 0),
         }
     }
 }
 
-impl TextSpanner for SpanScannerSpanner {
+impl TextSpanner for LexerTextSpanner {
     fn for_each_split_span(
         &self,
         text: &str,
@@ -191,7 +178,7 @@ mod tests {
     #[test]
     fn test_box() {
         let config: TextSpanningConfig<u32> = TextSpanningConfig::from_pattern(r"\w+");
-        let _box: Box<dyn TextSpanner> = Box::new(SpanScannerSpanner::from_config(
+        let _box: Box<dyn TextSpanner> = Box::new(LexerTextSpanner::from_config(
             config,
             Some(NonZeroUsize::new(1).unwrap()),
         ));
@@ -205,8 +192,7 @@ mod tests {
         let config: TextSpanningConfig<T> = TextSpanningConfig::from_pattern(r"\w+")
             .with_special_words([("<|FNORD|>", 4000), ("<|NORP|>", 4001)]);
 
-        let segmentor =
-            SpanScannerSpanner::from_config(config, Some(NonZeroUsize::new(1).unwrap()));
+        let segmentor = LexerTextSpanner::from_config(config, Some(NonZeroUsize::new(1).unwrap()));
 
         let source = "abc 1<|FNORD|> def  <|NORP|> ghi   ";
 
@@ -287,8 +273,7 @@ mod tests {
             TextSpanningConfig::from_pattern(OA_CL100K_BASE_PATTERN)
                 .with_special_words([("<|FNORD|>", 4000), ("<|NORP|>", 4001)]);
 
-        let segmentor =
-            SpanScannerSpanner::from_config(config, Some(NonZeroUsize::new(1).unwrap()));
+        let segmentor = LexerTextSpanner::from_config(config, Some(NonZeroUsize::new(1).unwrap()));
 
         let buf = "hello<|FNORD|> wor<|NORP|>ld!";
 
@@ -311,8 +296,7 @@ mod tests {
 
         let config: TextSpanningConfig<T> = TextSpanningConfig::from_pattern(r"\w+");
 
-        let segmentor =
-            SpanScannerSpanner::from_config(config, Some(NonZeroUsize::new(1).unwrap()));
+        let segmentor = LexerTextSpanner::from_config(config, Some(NonZeroUsize::new(1).unwrap()));
 
         let buf = vec!["hello world!", "abc def"];
         assert_eq!(
