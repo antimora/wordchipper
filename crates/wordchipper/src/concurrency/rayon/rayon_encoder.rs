@@ -85,7 +85,7 @@ mod tests {
 
     fn test_encoder<T: TokenType>() {
         let vocab = common_encoder_test_vocab::<T>();
-        let inner = vocab.to_encoder_builder().with_parallel(false).init();
+        let inner = vocab.to_encoder_builder().with_parallel(false).build();
         let encoder = ParallelRayonEncoder::new(inner);
 
         assert_eq!(encoder.special_vocab(), encoder.inner.special_vocab());

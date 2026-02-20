@@ -2,6 +2,8 @@
 
 use crate::{
     alloc::vec::Vec,
+    compat::strings::string_from_utf8_lossy,
+    regex::{RegexPattern, alternate_choice_regex_pattern},
     types::{TokenType, WCHashSet},
     vocab::{SpanTokenMap, VocabIndex, utility::validators::try_vocab_size},
 };
@@ -36,6 +38,16 @@ impl<T: TokenType> SpecialVocab<T> {
     /// Get the span map.
     pub fn span_map(&self) -> &SpanTokenMap<T> {
         &self.span_map
+    }
+
+    /// Get the number of special words in the vocab.
+    pub fn len(&self) -> usize {
+        self.span_map.len()
+    }
+
+    /// Check if the vocab is empty.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     /// Convert to a different token type.
@@ -113,6 +125,24 @@ impl<T: TokenType> SpecialVocab<T> {
                 None
             }
         })
+    }
+
+    /// Get the regex pattern for special words.
+    ///
+    /// ## Returns
+    /// `None` if no special words are present;
+    /// and `Some(RegexPattern)` otherwise.
+    pub fn special_pattern(&self) -> Option<RegexPattern> {
+        if self.is_empty() {
+            return None;
+        }
+
+        let alts = self
+            .span_map
+            .keys()
+            .map(|k| string_from_utf8_lossy(k.clone()))
+            .collect::<Vec<_>>();
+        Some(alternate_choice_regex_pattern(&alts))
     }
 }
 

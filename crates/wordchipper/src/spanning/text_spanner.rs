@@ -57,19 +57,6 @@ pub trait TextSpanner: Send + Sync {
         text.len() / self.expected_bytes_per_span() as usize
     }
 
-    /// Find the next special span in the text.
-    ///
-    /// ## Arguments
-    /// * `text` - The text to search in.
-    ///
-    /// ## Returns
-    /// * `Some(Range<usize>)` if a special span is found,
-    /// * `None` otherwise.
-    fn next_special_span(
-        &self,
-        text: &str,
-    ) -> Option<Range<usize>>;
-
     /// Iterate over all split [`SpanRef`]s in the text.
     ///
     /// # Arguments
@@ -144,6 +131,10 @@ pub trait TextSpanner: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::alloc::{boxed::Box, sync::Arc};
+
+    const _TEXT_SPANNER_BOX_CHECK: Option<Box<dyn TextSpanner>> = None;
+    const _TEXT_SPANNER_ARC_CHECK: Option<Arc<dyn TextSpanner>> = None;
 
     #[test]
     fn test_spanref() {

@@ -8,6 +8,7 @@ use crate::{
 };
 
 /// Builder for production [`TokenDecoder`]s.
+#[derive(Clone, PartialEq)]
 pub struct TokenDecoderBuilder<T: TokenType> {
     vocab: UnifiedTokenVocab<T>,
 

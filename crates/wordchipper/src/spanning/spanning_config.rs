@@ -7,7 +7,7 @@ use crate::{regex::RegexPattern, types::TokenType, vocab::SpecialVocab};
 ///
 /// Instance names should prefer `spanner_config`,
 /// or `config` when there is no ambiguity.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TextSpanningConfig<T: TokenType> {
     /// Regex pattern for word splitting.
     pattern: RegexPattern,
@@ -109,6 +109,11 @@ impl<T: TokenType> TextSpanningConfig<T> {
         &self.specials
     }
 
+    /// Get the special pattern, if any.
+    pub fn special_pattern(&self) -> Option<RegexPattern> {
+        self.specials.special_pattern()
+    }
+
     /// Get a mutable view of the [`SpecialVocab`]
     pub fn specials_mut(&mut self) -> &mut SpecialVocab<T> {
         &mut self.specials
@@ -118,10 +123,7 @@ impl<T: TokenType> TextSpanningConfig<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        alloc::string::ToString,
-        vocab::{SpecialVocab, VocabIndex},
-    };
+    use crate::{alloc::string::ToString, vocab::SpecialVocab};
 
     #[test]
     fn test_from_pattern() {

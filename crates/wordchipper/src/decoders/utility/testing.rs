@@ -24,7 +24,7 @@ pub fn common_decoder_unit_test<T: TokenType, D: TokenDecoder<T>>(
 
     let encoder = TokenEncoderBuilder::<T>::new(vocab.clone())
         .with_parallel(false)
-        .init();
+        .build();
 
     let token_batch = encoder.try_encode_batch(&samples).unwrap();
     let decoded_strings = decoder
