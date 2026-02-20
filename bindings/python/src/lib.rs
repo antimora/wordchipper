@@ -9,8 +9,8 @@ use wordchipper::{
     TokenEncoder,
     UnifiedTokenVocab,
     VocabIndex,
+    WordchipperError,
     disk_cache::WordchipperDiskCache,
-    errors::WordchipperError,
     support::{
         slices::{inner_slice_view, inner_str_view},
         strings::string_from_utf8_lossy,

@@ -8,8 +8,8 @@ use std::{
 
 use parking_lot::lock_api::RwLock;
 use wordchipper::{
+    WCHashSet,
     support::concurrency::threads::{resolve_max_pool, unstable_current_thread_id_hash},
-    types::WCHashSet,
 };
 
 /// Experimental LRU-based variant of [`wordchipper::support::concurrency::PoolToy`].
