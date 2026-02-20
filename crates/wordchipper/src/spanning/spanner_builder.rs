@@ -1,12 +1,14 @@
 //! Text Spanner Builder
 
-use core::num::NonZeroUsize;
-
+use crate::regex::{RegexPattern, RegexWrapper, alternate_choice_regex_pattern};
+use crate::spanning::{LexerTextSpanner, SpanLexer};
 use crate::{
-    TokenType,
+    TokenType, VocabIndex,
     alloc::sync::Arc,
-    spanning::{RegexTextSpanner, TextSpanner, TextSpanningConfig},
+    spanning::{TextSpanner, TextSpanningConfig},
 };
+use cfg_if::cfg_if;
+use core::num::NonZeroUsize;
 
 /// Builder for [`TextSpanner`]s.
 #[derive(Clone, PartialEq)]
@@ -85,9 +87,40 @@ impl<T: TokenType> TextSpannerBuilder<T> {
 
     /// Build a [`TextSpanner`] with the current configuration.
     pub fn build(&self) -> Arc<dyn TextSpanner> {
-        Arc::new(RegexTextSpanner::from_config(
-            self.config.clone(),
-            self.max_pool,
-        ))
+        fn maybe_pool(
+            pattern: RegexPattern,
+            max_pool: Option<NonZeroUsize>,
+        ) -> Arc<dyn SpanLexer> {
+            let re: RegexWrapper = pattern.into();
+
+            cfg_if! {
+                if #[cfg(feature = "std")] {
+                    Arc::new(crate::concurrency::PoolToy::new(re, max_pool))
+                } else {
+                    Arc::new(re)
+                }
+            }
+        }
+
+        let word_lexer: Arc<dyn SpanLexer> = {
+            let pattern = self.config().pattern().clone();
+            maybe_pool(pattern, self.max_pool)
+        };
+        let special_lexer: Option<Arc<dyn SpanLexer>> = if self.config.specials().is_empty() {
+            None
+        } else {
+            let specials = self
+                .config
+                .specials()
+                .span_pairs()
+                .map(|(span, _)| String::from_utf8(span.clone()).unwrap())
+                .collect::<Vec<_>>();
+
+            let pattern = alternate_choice_regex_pattern(&specials);
+
+            Some(maybe_pool(pattern, self.max_pool))
+        };
+
+        Arc::new(LexerTextSpanner::new(word_lexer, special_lexer))
     }
 }

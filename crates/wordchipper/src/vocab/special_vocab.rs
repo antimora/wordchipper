@@ -38,6 +38,16 @@ impl<T: TokenType> SpecialVocab<T> {
         &self.span_map
     }
 
+    /// Get the number of special words in the vocab.
+    pub fn len(&self) -> usize {
+        self.span_map.len()
+    }
+
+    /// Check if the vocab is empty.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     /// Convert to a different token type.
     pub fn to_token_type<G: TokenType>(&self) -> crate::errors::Result<SpecialVocab<G>> {
         if let Some(max) = self.max_token() {
