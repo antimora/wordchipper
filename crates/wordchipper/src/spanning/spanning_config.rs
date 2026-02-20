@@ -118,10 +118,7 @@ impl<T: TokenType> TextSpanningConfig<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        alloc::string::ToString,
-        vocab::{SpecialVocab, VocabIndex},
-    };
+    use crate::{alloc::string::ToString, vocab::SpecialVocab};
 
     #[test]
     fn test_from_pattern() {

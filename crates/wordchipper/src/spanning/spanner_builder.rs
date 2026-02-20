@@ -1,14 +1,16 @@
 //! Text Spanner Builder
 
-use crate::regex::{RegexPattern, RegexWrapper, alternate_choice_regex_pattern};
-use crate::spanning::{LexerTextSpanner, SpanLexer};
-use crate::{
-    TokenType, VocabIndex,
-    alloc::sync::Arc,
-    spanning::{TextSpanner, TextSpanningConfig},
-};
-use cfg_if::cfg_if;
 use core::num::NonZeroUsize;
+
+use cfg_if::cfg_if;
+
+use crate::{
+    TokenType,
+    VocabIndex,
+    alloc::sync::Arc,
+    regex::{RegexPattern, RegexWrapper, alternate_choice_regex_pattern},
+    spanning::{LexerTextSpanner, SpanLexer, TextSpanner, TextSpanningConfig},
+};
 
 /// Builder for [`TextSpanner`]s.
 #[derive(Clone, PartialEq)]
