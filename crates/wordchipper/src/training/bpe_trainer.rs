@@ -6,7 +6,7 @@ use compact_str::CompactString;
 use dary_heap::OctonaryHeap;
 
 use crate::{
-    regex::RegexPattern,
+    support::regex::RegexPattern,
     training::{
         CountType,
         StringChunkType,
@@ -240,7 +240,7 @@ where
     fn train_basic_pairs<T>(
         self,
         byte_vocab: ByteMapVocab<T>,
-    ) -> crate::errors::Result<TrainResults<T>>
+    ) -> crate::errors::WCResult<TrainResults<T>>
     where
         T: TokenType,
         C: CountType,
@@ -402,7 +402,7 @@ where
     pub fn train<T>(
         self,
         byte_vocab: ByteMapVocab<T>,
-    ) -> crate::errors::Result<UnifiedTokenVocab<T>>
+    ) -> crate::errors::WCResult<UnifiedTokenVocab<T>>
     where
         T: TokenType,
         C: CountType,
@@ -419,10 +419,10 @@ mod tests {
     use compact_str::CompactString;
 
     use crate::{
-        compat::traits::static_is_send_sync_check,
         decoders::{TokenDecoder, TokenDictDecoder},
         encoders::TokenEncoderBuilder,
         pretrained::openai::OA_CL100K_BASE_PATTERN,
+        support::traits::static_is_send_sync_check,
         training::{BinaryPairVocabTrainerOptions, bpe_trainer::MergeJob},
         vocab::{ByteMapVocab, UnifiedTokenVocab},
     };

@@ -2,8 +2,10 @@
 
 use crate::{
     alloc::vec::Vec,
-    compat::strings::string_from_utf8_lossy,
-    regex::{RegexPattern, alternate_choice_regex_pattern},
+    support::{
+        regex::{RegexPattern, alternate_choice_regex_pattern},
+        strings::string_from_utf8_lossy,
+    },
     types::{TokenType, WCHashSet},
     vocab::{SpanTokenMap, VocabIndex, utility::validators::try_vocab_size},
 };
@@ -51,7 +53,7 @@ impl<T: TokenType> SpecialVocab<T> {
     }
 
     /// Convert to a different token type.
-    pub fn to_token_type<G: TokenType>(&self) -> crate::errors::Result<SpecialVocab<G>> {
+    pub fn to_token_type<G: TokenType>(&self) -> crate::errors::WCResult<SpecialVocab<G>> {
         if let Some(max) = self.max_token() {
             try_vocab_size::<G>(max.to_usize().unwrap())?;
         }

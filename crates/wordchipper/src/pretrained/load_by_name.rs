@@ -3,7 +3,7 @@ use crate::{
     alloc::{string::String, vec::Vec},
     errors::WordchipperError,
     pretrained::openai::OATokenizer,
-    resources::ResourceLoader,
+    support::resources::ResourceLoader,
 };
 
 /// A hook that can be used to load pretrained models.
@@ -12,7 +12,7 @@ pub struct ConstPretrainedHook {
     pub aliases: &'static [&'static str],
 
     /// A function that loads the pretrained model.
-    pub load: fn(&str, &mut dyn ResourceLoader) -> crate::errors::Result<UnifiedTokenVocab<u32>>,
+    pub load: fn(&str, &mut dyn ResourceLoader) -> crate::errors::WCResult<UnifiedTokenVocab<u32>>,
 }
 
 const PRETRAINED_HOOKS: &[ConstPretrainedHook] = &[
@@ -46,7 +46,7 @@ const PRETRAINED_HOOKS: &[ConstPretrainedHook] = &[
 pub fn get_model(
     name: &str,
     loader: &mut dyn ResourceLoader,
-) -> crate::errors::Result<UnifiedTokenVocab<u32>> {
+) -> crate::errors::WCResult<UnifiedTokenVocab<u32>> {
     for hook in PRETRAINED_HOOKS {
         if hook.aliases.contains(&name) {
             return (hook.load)(name, loader);

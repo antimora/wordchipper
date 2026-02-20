@@ -8,14 +8,16 @@ use std::{
 };
 
 #[cfg(feature = "std")]
-use crate::resources::ResourceLoader;
+use crate::support::resources::ResourceLoader;
 #[cfg(feature = "std")]
 use crate::vocab::UnifiedTokenVocab;
 use crate::{
     alloc::{string::String, vec::Vec},
-    regex::{ConstRegexPattern, RegexPattern},
-    resources::ConstKeyedResource,
     spanning::TextSpanningConfig,
+    support::{
+        regex::{ConstRegexPattern, RegexPattern},
+        resources::ConstKeyedResource,
+    },
     types::TokenType,
 };
 
@@ -58,8 +60,8 @@ impl ConstVocabularyFactory {
     fn fetch_resource(
         &self,
         loader: &mut dyn ResourceLoader,
-    ) -> crate::errors::Result<PathBuf> {
-        let res: crate::resources::KeyedResource = self.resource.clone().into();
+    ) -> crate::errors::WCResult<PathBuf> {
+        let res: crate::support::resources::KeyedResource = self.resource.clone().into();
         loader.load_resource_path(&res)
     }
 
@@ -68,7 +70,7 @@ impl ConstVocabularyFactory {
     pub fn load_vocab<T: TokenType>(
         &self,
         loader: &mut dyn ResourceLoader,
-    ) -> crate::errors::Result<UnifiedTokenVocab<T>> {
+    ) -> crate::errors::WCResult<UnifiedTokenVocab<T>> {
         let path = self.fetch_resource(loader)?;
         self.load_vocab_path(path)
     }
@@ -78,7 +80,7 @@ impl ConstVocabularyFactory {
     pub fn load_vocab_path<T: TokenType>(
         &self,
         path: impl AsRef<Path>,
-    ) -> crate::errors::Result<UnifiedTokenVocab<T>> {
+    ) -> crate::errors::WCResult<UnifiedTokenVocab<T>> {
         let reader = BufReader::new(File::open(path)?);
         self.read_vocab(reader)
     }
@@ -88,7 +90,7 @@ impl ConstVocabularyFactory {
     pub fn read_vocab<T: TokenType, R: BufRead>(
         &self,
         reader: R,
-    ) -> crate::errors::Result<UnifiedTokenVocab<T>> {
+    ) -> crate::errors::WCResult<UnifiedTokenVocab<T>> {
         crate::vocab::io::read_base64_unified_vocab(reader, self.spanning_config())
     }
 }

@@ -3,7 +3,7 @@
 use std::{io::BufRead, path::Path};
 
 #[cfg(feature = "download")]
-use crate::resources::ResourceLoader;
+use crate::support::resources::ResourceLoader;
 use crate::{
     pretrained::openai::{
         OA_CL100K_BASE_PATTERN,
@@ -25,9 +25,8 @@ use crate::{
             oa_r50k_base_special_tokens,
         },
     },
-    regex::RegexPattern,
-    resources::ConstKeyedResource,
     spanning::TextSpanningConfig,
+    support::{regex::RegexPattern, resources::ConstKeyedResource},
     types::TokenType,
     vocab::{UnifiedTokenVocab, utility::factories::ConstVocabularyFactory},
 };
@@ -105,7 +104,7 @@ impl OATokenizer {
     pub fn load_vocab<T: TokenType>(
         &self,
         loader: &mut dyn ResourceLoader,
-    ) -> crate::errors::Result<UnifiedTokenVocab<T>> {
+    ) -> crate::errors::WCResult<UnifiedTokenVocab<T>> {
         self.factory().load_vocab(loader)
     }
 
@@ -113,7 +112,7 @@ impl OATokenizer {
     pub fn load_path<T: TokenType>(
         &self,
         path: impl AsRef<Path>,
-    ) -> crate::errors::Result<UnifiedTokenVocab<T>> {
+    ) -> crate::errors::WCResult<UnifiedTokenVocab<T>> {
         self.factory().load_vocab_path(path)
     }
 
@@ -121,7 +120,7 @@ impl OATokenizer {
     pub fn read_vocab<T: TokenType, R: BufRead>(
         &self,
         reader: R,
-    ) -> crate::errors::Result<UnifiedTokenVocab<T>> {
+    ) -> crate::errors::WCResult<UnifiedTokenVocab<T>> {
         self.factory().read_vocab(reader)
     }
 }

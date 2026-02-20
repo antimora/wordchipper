@@ -73,7 +73,10 @@
 //!     disk_cache::WordchipperDiskCache,
 //! };
 //!
-//! fn example() -> wordchipper::errors::Result<(Arc<dyn TokenEncoder<u32>>, Arc<dyn TokenDecoder<u32>>)> {
+//! fn example() -> wordchipper::WCResult<(
+//!         Arc<dyn TokenEncoder<u32>>,
+//!         Arc<dyn TokenDecoder<u32>>
+//! )> {
 //!     let mut disk_cache = WordchipperDiskCache::default();
 //!     let vocab: UnifiedTokenVocab<u32> = get_model("openai/o200k_harmony", &mut disk_cache)?;
 //!
@@ -95,30 +98,25 @@ extern crate alloc;
 
 #[cfg(feature = "training")]
 pub mod training;
-
 #[cfg(feature = "download")]
 #[doc(inline)]
 pub use wordchipper_disk_cache as disk_cache;
-
-#[cfg(feature = "std")]
-pub mod concurrency;
-
-pub mod errors;
-
-pub mod compat;
 pub mod decoders;
 pub mod encoders;
 pub mod pretrained;
-pub mod regex;
-pub mod resources;
 pub mod spanning;
-pub mod types;
+pub mod support;
 pub mod vocab;
+
+mod errors;
+mod types;
 
 #[doc(inline)]
 pub use decoders::{TokenDecoder, TokenDecoderBuilder};
 #[doc(inline)]
 pub use encoders::{TokenEncoder, TokenEncoderBuilder};
+#[doc(inline)]
+pub use errors::*;
 #[doc(inline)]
 #[cfg(feature = "download")]
 pub use pretrained::{get_model, list_models};
