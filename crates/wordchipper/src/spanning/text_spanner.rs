@@ -131,6 +131,10 @@ pub trait TextSpanner: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::alloc::{boxed::Box, sync::Arc};
+
+    const _TEXT_SPANNER_BOX_CHECK: Option<Box<dyn TextSpanner>> = None;
+    const _TEXT_SPANNER_ARC_CHECK: Option<Arc<dyn TextSpanner>> = None;
 
     #[test]
     fn test_spanref() {

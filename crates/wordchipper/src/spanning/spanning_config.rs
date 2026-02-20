@@ -109,6 +109,11 @@ impl<T: TokenType> TextSpanningConfig<T> {
         &self.specials
     }
 
+    /// Get the special pattern, if any.
+    pub fn special_pattern(&self) -> Option<RegexPattern> {
+        self.specials.special_pattern()
+    }
+
     /// Get a mutable view of the [`SpecialVocab`]
     pub fn specials_mut(&mut self) -> &mut SpecialVocab<T> {
         &mut self.specials
