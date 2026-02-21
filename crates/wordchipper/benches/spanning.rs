@@ -21,22 +21,15 @@ fn main() {
     divan::main();
 }
 
-static CORPUS: &str = include_str!("data/corpus.txt");
+static DIVERSE_CORPUS: &str = include_str!("data/multilingual.txt");
+static ENGLISH_CORPUS: &str = include_str!("data/english.txt");
 
 fn diverse_text() -> String {
-    CORPUS.repeat(10)
+    DIVERSE_CORPUS.repeat(10)
 }
 
 fn english_text() -> String {
-    let paragraph = "The quick brown fox jumps over the lazy dog. \
-        It's a beautiful day, and I'll be taking my 3 dogs for a walk. \
-        Don't forget: the temperature is 72 degrees! \
-        We've been waiting since 10:30am.\n\
-        \n\
-        In 2024, artificial intelligence continued to advance rapidly. \
-        Large language models like GPT-4 and Claude demonstrated remarkable capabilities. \
-        The researchers couldn't believe the results they'd achieved.\n";
-    paragraph.repeat(100)
+    ENGLISH_CORPUS.repeat(10)
 }
 
 fn build_regex_only_spanner(
