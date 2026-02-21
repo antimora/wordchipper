@@ -1,4 +1,5 @@
 #![allow(missing_docs)]
+#![cfg(feature = "client")]
 
 use tiktoken_rs::CoreBPE;
 use tokenizers::Tokenizer;
