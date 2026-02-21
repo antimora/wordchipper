@@ -42,7 +42,10 @@ fn roundtrip_validation(model: OATokenizer) {
     }
 }
 
-fn tiktoken_validation(model: OATokenizer, tiktoken_bpe: &CoreBPE) {
+fn tiktoken_validation(
+    model: OATokenizer,
+    tiktoken_bpe: &CoreBPE,
+) {
     let mut disk_cache = WordchipperDiskCache::default();
     let vocab: UnifiedTokenVocab<u32> = model.load_vocab(&mut disk_cache).unwrap();
     let encoder = vocab.to_default_encoder();
@@ -62,7 +65,10 @@ fn tiktoken_validation(model: OATokenizer, tiktoken_bpe: &CoreBPE) {
     }
 }
 
-fn tokenizers_validation(model: OATokenizer, hf_tok: &Tokenizer) {
+fn tokenizers_validation(
+    model: OATokenizer,
+    hf_tok: &Tokenizer,
+) {
     let mut disk_cache = WordchipperDiskCache::default();
     let vocab: UnifiedTokenVocab<u32> = model.load_vocab(&mut disk_cache).unwrap();
     let encoder = vocab.to_default_encoder();

@@ -168,6 +168,11 @@ name = "spanning"
 harness = false
 
 [[bench]]
-name = "tokenizer"
+name = "encoding"
+harness = false
+required-features = ["client"]
+
+[[bench]]
+name = "decoding"
 harness = false
 required-features = ["client"]

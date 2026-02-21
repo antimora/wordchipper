@@ -6,7 +6,9 @@ use divan::{Bencher, black_box, counter::BytesCount};
 use wordchipper::{
     pretrained::openai::{OA_CL100K_BASE_PATTERN, OA_O200K_BASE_PATTERN},
     spanning::{
-        TextSpanner, TextSpannerBuilder, TextSpanningConfig,
+        TextSpanner,
+        TextSpannerBuilder,
+        TextSpanningConfig,
         span_lexers::{LexerTextSpanner, SpanLexer},
     },
     support::regex::RegexWrapper,
@@ -37,12 +39,16 @@ fn english_text() -> String {
     paragraph.repeat(100)
 }
 
-fn build_regex_only_spanner(pattern: impl Into<wordchipper::support::regex::RegexPattern>) -> Arc<dyn TextSpanner> {
+fn build_regex_only_spanner(
+    pattern: impl Into<wordchipper::support::regex::RegexPattern>
+) -> Arc<dyn TextSpanner> {
     let lexer: Arc<dyn SpanLexer> = Arc::new(RegexWrapper::from(pattern.into()));
     Arc::new(LexerTextSpanner::new(lexer, None))
 }
 
-fn build_default_spanner(pattern: impl Into<wordchipper::support::regex::RegexPattern>) -> Arc<dyn TextSpanner> {
+fn build_default_spanner(
+    pattern: impl Into<wordchipper::support::regex::RegexPattern>
+) -> Arc<dyn TextSpanner> {
     let config: TextSpanningConfig<u32> = TextSpanningConfig::from_pattern(pattern);
     TextSpannerBuilder::new(config).with_parallel(false).build()
 }

@@ -6,7 +6,9 @@ use divan::{Bencher, black_box, counter::BytesCount};
 use tiktoken_rs::CoreBPE;
 use tokenizers::Tokenizer;
 use wordchipper::{
-    TokenDecoder, TokenEncoder, UnifiedTokenVocab,
+    TokenDecoder,
+    TokenEncoder,
+    UnifiedTokenVocab,
     disk_cache::WordchipperDiskCache,
     pretrained::openai::OATokenizer,
 };
@@ -55,11 +57,9 @@ struct TiktokenFixture {
     bpe: Arc<CoreBPE>,
 }
 
-static WC_CL100K: LazyLock<WcFixture> =
-    LazyLock::new(|| WcFixture::load(OATokenizer::Cl100kBase));
+static WC_CL100K: LazyLock<WcFixture> = LazyLock::new(|| WcFixture::load(OATokenizer::Cl100kBase));
 
-static WC_O200K: LazyLock<WcFixture> =
-    LazyLock::new(|| WcFixture::load(OATokenizer::O200kBase));
+static WC_O200K: LazyLock<WcFixture> = LazyLock::new(|| WcFixture::load(OATokenizer::O200kBase));
 
 static TT_CL100K: LazyLock<TiktokenFixture> = LazyLock::new(|| TiktokenFixture {
     bpe: Arc::new(tiktoken_rs::cl100k_base().unwrap()),
@@ -73,36 +73,13 @@ static HF_CL100K: LazyLock<Arc<Tokenizer>> = LazyLock::new(|| {
     Arc::new(Tokenizer::from_pretrained("Xenova/text-embedding-ada-002", None).unwrap())
 });
 
-static HF_O200K: LazyLock<Arc<Tokenizer>> = LazyLock::new(|| {
-    Arc::new(Tokenizer::from_pretrained("Xenova/gpt-4o", None).unwrap())
-});
+static HF_O200K: LazyLock<Arc<Tokenizer>> =
+    LazyLock::new(|| Arc::new(Tokenizer::from_pretrained("Xenova/gpt-4o", None).unwrap()));
 
 mod english {
     use super::*;
 
-    mod wordchipper_enc {
-        use super::*;
-
-        #[divan::bench]
-        fn cl100k(bencher: Bencher) {
-            let text = english_text();
-            let encoder = &WC_CL100K.encoder;
-            bencher
-                .counter(BytesCount::new(text.len()))
-                .bench(|| encoder.try_encode(black_box(&text)).unwrap());
-        }
-
-        #[divan::bench]
-        fn o200k(bencher: Bencher) {
-            let text = english_text();
-            let encoder = &WC_O200K.encoder;
-            bencher
-                .counter(BytesCount::new(text.len()))
-                .bench(|| encoder.try_encode(black_box(&text)).unwrap());
-        }
-    }
-
-    mod wordchipper_dec {
+    mod wordchipper {
         use super::*;
 
         #[divan::bench]
@@ -126,29 +103,7 @@ mod english {
         }
     }
 
-    mod tiktoken_enc {
-        use super::*;
-
-        #[divan::bench]
-        fn cl100k(bencher: Bencher) {
-            let text = english_text();
-            let bpe = &TT_CL100K.bpe;
-            bencher
-                .counter(BytesCount::new(text.len()))
-                .bench(|| bpe.encode_with_special_tokens(black_box(&text)));
-        }
-
-        #[divan::bench]
-        fn o200k(bencher: Bencher) {
-            let text = english_text();
-            let bpe = &TT_O200K.bpe;
-            bencher
-                .counter(BytesCount::new(text.len()))
-                .bench(|| bpe.encode_with_special_tokens(black_box(&text)));
-        }
-    }
-
-    mod tiktoken_dec {
+    mod tiktoken {
         use super::*;
 
         #[divan::bench]
@@ -172,29 +127,7 @@ mod english {
         }
     }
 
-    mod tokenizers_enc {
-        use super::*;
-
-        #[divan::bench]
-        fn cl100k(bencher: Bencher) {
-            let text = english_text();
-            let tok = &*HF_CL100K;
-            bencher
-                .counter(BytesCount::new(text.len()))
-                .bench(|| tok.encode(black_box(text.as_str()), true).unwrap());
-        }
-
-        #[divan::bench]
-        fn o200k(bencher: Bencher) {
-            let text = english_text();
-            let tok = &*HF_O200K;
-            bencher
-                .counter(BytesCount::new(text.len()))
-                .bench(|| tok.encode(black_box(text.as_str()), true).unwrap());
-        }
-    }
-
-    mod tokenizers_dec {
+    mod tokenizers {
         use super::*;
 
         #[divan::bench]
@@ -224,29 +157,7 @@ mod english {
 mod diverse {
     use super::*;
 
-    mod wordchipper_enc {
-        use super::*;
-
-        #[divan::bench]
-        fn cl100k(bencher: Bencher) {
-            let text = diverse_text();
-            let encoder = &WC_CL100K.encoder;
-            bencher
-                .counter(BytesCount::new(text.len()))
-                .bench(|| encoder.try_encode(black_box(&text)).unwrap());
-        }
-
-        #[divan::bench]
-        fn o200k(bencher: Bencher) {
-            let text = diverse_text();
-            let encoder = &WC_O200K.encoder;
-            bencher
-                .counter(BytesCount::new(text.len()))
-                .bench(|| encoder.try_encode(black_box(&text)).unwrap());
-        }
-    }
-
-    mod wordchipper_dec {
+    mod wordchipper {
         use super::*;
 
         #[divan::bench]
@@ -270,29 +181,7 @@ mod diverse {
         }
     }
 
-    mod tiktoken_enc {
-        use super::*;
-
-        #[divan::bench]
-        fn cl100k(bencher: Bencher) {
-            let text = diverse_text();
-            let bpe = &TT_CL100K.bpe;
-            bencher
-                .counter(BytesCount::new(text.len()))
-                .bench(|| bpe.encode_with_special_tokens(black_box(&text)));
-        }
-
-        #[divan::bench]
-        fn o200k(bencher: Bencher) {
-            let text = diverse_text();
-            let bpe = &TT_O200K.bpe;
-            bencher
-                .counter(BytesCount::new(text.len()))
-                .bench(|| bpe.encode_with_special_tokens(black_box(&text)));
-        }
-    }
-
-    mod tiktoken_dec {
+    mod tiktoken {
         use super::*;
 
         #[divan::bench]
@@ -316,29 +205,7 @@ mod diverse {
         }
     }
 
-    mod tokenizers_enc {
-        use super::*;
-
-        #[divan::bench]
-        fn cl100k(bencher: Bencher) {
-            let text = diverse_text();
-            let tok = &*HF_CL100K;
-            bencher
-                .counter(BytesCount::new(text.len()))
-                .bench(|| tok.encode(black_box(text.as_str()), true).unwrap());
-        }
-
-        #[divan::bench]
-        fn o200k(bencher: Bencher) {
-            let text = diverse_text();
-            let tok = &*HF_O200K;
-            bencher
-                .counter(BytesCount::new(text.len()))
-                .bench(|| tok.encode(black_box(text.as_str()), true).unwrap());
-        }
-    }
-
-    mod tokenizers_dec {
+    mod tokenizers {
         use super::*;
 
         #[divan::bench]
