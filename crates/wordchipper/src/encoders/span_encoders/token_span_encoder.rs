@@ -1,5 +1,3 @@
-use std::sync::Mutex;
-
 use crate::{
     TokenEncoder,
     TokenType,
@@ -8,7 +6,6 @@ use crate::{
     alloc::{boxed::Box, sync::Arc, vec::Vec},
     encoders::span_encoders::SpanEncoder,
     spanning::TextSpanner,
-    support::concurrency::{PoolToy, threads::resolve_max_pool},
     vocab::SpecialVocab,
 };
 
@@ -23,7 +20,11 @@ where
     /// Text Spanner.
     spanner: Arc<dyn TextSpanner>,
 
-    se_pool: PoolToy<Mutex<Box<dyn SpanEncoder<T>>>>,
+    #[cfg(feature = "std")]
+    se_pool: crate::support::concurrency::PoolToy<std::sync::Mutex<Box<dyn SpanEncoder<T>>>>,
+
+    #[cfg(not(feature = "std"))]
+    se_builder: Arc<dyn Fn() -> Box<dyn SpanEncoder<T>> + Send + Sync>,
 }
 
 impl<T: TokenType> TokenSpanEncoder<T> {
@@ -33,14 +34,26 @@ impl<T: TokenType> TokenSpanEncoder<T> {
         vocab: Arc<UnifiedTokenVocab<T>>,
         se_builder: Arc<dyn Fn() -> Box<dyn SpanEncoder<T>> + Send + Sync>,
     ) -> Self {
-        let pool_size = resolve_max_pool(None);
-        let pool: Vec<Mutex<Box<dyn SpanEncoder<T>>>> =
-            (0..pool_size).map(|_| Mutex::new(se_builder())).collect();
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "std")] {
+                use crate::support::concurrency::{PoolToy, threads::resolve_max_pool};
 
-        Self {
-            vocab,
-            spanner,
-            se_pool: PoolToy::from_pool(pool),
+                let pool_size = resolve_max_pool(None);
+                let pool: Vec<std::sync::Mutex<Box<dyn SpanEncoder<T>>>> =
+                    (0..pool_size).map(|_| std::sync::Mutex::new(se_builder())).collect();
+
+                Self {
+                    vocab,
+                    spanner,
+                    se_pool: PoolToy::from_pool(pool),
+                }
+            } else {
+                Self {
+                    vocab,
+                    spanner,
+                    se_builder,
+                }
+            }
         }
     }
 }
@@ -63,7 +76,13 @@ impl<T: TokenType> TokenEncoder<T> for TokenSpanEncoder<T> {
         text: &str,
         tokens: &mut Vec<T>,
     ) -> WCResult<()> {
-        let mut se = self.se_pool.get().lock().unwrap_or_else(|e| e.into_inner());
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "std")] {
+                let mut se = self.se_pool.get().lock().unwrap_or_else(|e| e.into_inner());
+            } else {
+                let mut se = (self.se_builder)();
+            }
+        }
 
         self.spanner.for_each_split_span(text, &mut |span_ref| {
             se.encode_append_span_ref(&self.vocab, text, span_ref, tokens);
