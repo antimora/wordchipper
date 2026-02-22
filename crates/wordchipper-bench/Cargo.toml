@@ -1,0 +1,33 @@
+[package]
+name = "wordchipper-bench"
+repository.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+wordchipper = { path = "../wordchipper", features = ["default"] }
+
+divan = { workspace = true }
+tiktoken-rs = { workspace = true }
+tokenizers = { workspace = true, features = ["http"] }
+
+[[bench]]
+name = "spanning"
+harness = false
+
+[[bench]]
+name = "encoding_single"
+harness = false
+
+[[bench]]
+name = "encoding_parallel"
+harness = false
+
+[[bench]]
+name = "decoding_single"
+harness = false

@@ -1,3 +1,5 @@
+use std::sync::Mutex;
+
 use crate::{
     TokenEncoder,
     TokenType,
@@ -6,6 +8,7 @@ use crate::{
     alloc::{boxed::Box, sync::Arc, vec::Vec},
     encoders::span_encoders::SpanEncoder,
     spanning::TextSpanner,
+    support::concurrency::{PoolToy, threads::resolve_max_pool},
     vocab::SpecialVocab,
 };
 
@@ -20,7 +23,7 @@ where
     /// Text Spanner.
     spanner: Arc<dyn TextSpanner>,
 
-    se_builder: Arc<dyn Fn() -> Box<dyn SpanEncoder<T>> + Send + Sync>,
+    se_pool: PoolToy<Mutex<Box<dyn SpanEncoder<T>>>>,
 }
 
 impl<T: TokenType> TokenSpanEncoder<T> {
@@ -30,10 +33,14 @@ impl<T: TokenType> TokenSpanEncoder<T> {
         vocab: Arc<UnifiedTokenVocab<T>>,
         se_builder: Arc<dyn Fn() -> Box<dyn SpanEncoder<T>> + Send + Sync>,
     ) -> Self {
+        let pool_size = resolve_max_pool(None);
+        let pool: Vec<Mutex<Box<dyn SpanEncoder<T>>>> =
+            (0..pool_size).map(|_| Mutex::new(se_builder())).collect();
+
         Self {
             vocab,
             spanner,
-            se_builder,
+            se_pool: PoolToy::from_pool(pool),
         }
     }
 }
@@ -56,13 +63,9 @@ impl<T: TokenType> TokenEncoder<T> for TokenSpanEncoder<T> {
         text: &str,
         tokens: &mut Vec<T>,
     ) -> WCResult<()> {
-        let mut se = (self.se_builder)();
+        let mut se = self.se_pool.get().lock().unwrap_or_else(|e| e.into_inner());
 
         self.spanner.for_each_split_span(text, &mut |span_ref| {
-            // Note: .split_spans().into_iter().for_each() is *very* slightly faster
-            // But, extending this interface to allow early exit via accepted specials
-            // would end up slowing us down when that was enabled.
-
             se.encode_append_span_ref(&self.vocab, text, span_ref, tokens);
             true
         });
