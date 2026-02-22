@@ -3541,10 +3541,12 @@ dependencies = [
 name = "wordchipper-bench"
 version = "0.0.0"
 dependencies = [
+ "arrow",
  "divan",
  "tiktoken-rs",
  "tokenizers",
  "wordchipper",
+ "wordchipper-data",
 ]
 
 [[package]]

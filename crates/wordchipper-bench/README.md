@@ -35,11 +35,31 @@ cargo bench -p wordchipper-bench --bench encoding_single -- diverse
 cargo bench -p wordchipper-bench --bench encoding_parallel -- priority_merge
 ```
 
+### Parallel bench data
+
+`encoding_parallel` uses fineweb-edu parquet shards (same as `sample-timer`).
+Download shard 0 first:
+
+```bash
+cargo run --release -p sample-timer -- \
+  --dataset-dir /tmp/wordchipper-bench-data \
+  --model openai/cl100k_base --shards 0
+```
+
+Then set the data directory (defaults to `/tmp/wordchipper-bench-data`):
+
+```bash
+WORDCHIPPER_BENCH_DATA=/tmp/wordchipper-bench-data \
+  cargo bench -p wordchipper-bench --bench encoding_parallel
+```
+
 ## Results
 
-Collected on Apple M4 Pro. Corpus: `english.txt` (~7 KB x10) and `multilingual.txt` (~9 KB x10).
+Collected on Apple M4 Pro.
 
 ### Single-String Encoding (median MB/s)
+
+Corpus: `english.txt` (~7 KB) and `multilingual.txt` (~9 KB), repeated 10x.
 
 | Encoder            | diverse cl100k | diverse o200k | english cl100k | english o200k |
 | ------------------ | -------------- | ------------- | -------------- | ------------- |
@@ -51,13 +71,21 @@ Collected on Apple M4 Pro. Corpus: `english.txt` (~7 KB x10) and `multilingual.t
 
 ### Parallel Batch Encoding (median MB/s)
 
-| Encoder            | diverse cl100k | diverse o200k | english cl100k | english o200k |
-| ------------------ | -------------- | ------------- | -------------- | ------------- |
-| incremental_sweep  | 57             | 29            | 95             | 89            |
-| merge_heap         | 88             | 46            | 100            | 97            |
-| **priority_merge** | **108**        | **95**        | **99**         | **96**        |
-| tiktoken-rs        | 11             | 11            | 11             | 11            |
-| HF tokenizers      | 6              | 6             | 6              | 6             |
+Corpus: 1024 samples from fineweb-edu shard 0 (~4.2 MB batch).
 
-The `priority_merge` encoder is 3x faster than `incremental_sweep` on diverse/multilingual text with
-o200k, where longer multi-byte spans expose the O(n^2) vs O(n log n) gap.
+| Encoder           | cl100k   | o200k    |
+| ----------------- | -------- | -------- |
+| incremental_sweep | 1,366    | 1,175    |
+| merge_heap        | 1,093    | 1,195    |
+| priority_merge    | 961      | 906      |
+| tiktoken-rs       | 14       | 14       |
+| HF tokenizers     | 6        | 6        |
+
+With rayon parallelism on real-world English text, all three wordchipper variants saturate the CPU
+at ~1 GB/s. The O(n log n) advantage of `priority_merge` is more visible in single-string mode on
+diverse/multilingual text where spans are longer.
+
+### Single-String Encoding: `priority_merge` advantage
+
+The `priority_merge` encoder is 3x faster than `incremental_sweep` on diverse/multilingual text
+with o200k, where longer multi-byte spans expose the O(n^2) vs O(n log n) gap.
