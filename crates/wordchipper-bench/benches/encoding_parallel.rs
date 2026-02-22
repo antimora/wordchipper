@@ -221,8 +221,9 @@ mod priority_merge {
 }
 
 mod tiktoken {
-    use super::*;
     use rayon::prelude::*;
+
+    use super::*;
 
     #[divan::bench]
     fn cl100k(bencher: Bencher) {
