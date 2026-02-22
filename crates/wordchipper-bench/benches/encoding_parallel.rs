@@ -253,7 +253,6 @@ mod tiktoken {
 
 mod tokenizers {
     use super::*;
-    use rayon::prelude::*;
 
     #[divan::bench]
     fn cl100k(bencher: Bencher) {
@@ -261,11 +260,7 @@ mod tokenizers {
         let strs = BATCH.strs();
         bencher
             .counter(BytesCount::new(BATCH.total_bytes))
-            .bench(|| {
-                strs.par_iter()
-                    .map(|s| tok.encode(*s, true).unwrap())
-                    .collect::<Vec<_>>()
-            });
+            .bench(|| tok.encode_batch(black_box(strs.clone()), true).unwrap());
     }
 
     #[divan::bench]
@@ -274,10 +269,6 @@ mod tokenizers {
         let strs = BATCH.strs();
         bencher
             .counter(BytesCount::new(BATCH.total_bytes))
-            .bench(|| {
-                strs.par_iter()
-                    .map(|s| tok.encode(*s, true).unwrap())
-                    .collect::<Vec<_>>()
-            });
+            .bench(|| tok.encode_batch(black_box(strs.clone()), true).unwrap());
     }
 }
