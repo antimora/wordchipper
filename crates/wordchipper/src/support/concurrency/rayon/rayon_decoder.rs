@@ -82,19 +82,23 @@ mod tests {
         decoders::utility::testing::common_decoder_unit_test,
         pretrained::openai::OA_CL100K_BASE_PATTERN,
         spanning::TextSpanningConfig,
-        vocab::utility::testing::{build_test_shift_byte_vocab, build_test_vocab},
+        vocab::{
+            SharedVocabSource,
+            utility::testing::{build_test_shift_byte_vocab, build_test_vocab},
+        },
     };
 
     #[test]
     fn test_rayon_decoder() {
         type T = u16;
 
-        let vocab: UnifiedTokenVocab<T> = build_test_vocab(
+        let vocab: Arc<UnifiedTokenVocab<T>> = build_test_vocab(
             build_test_shift_byte_vocab(10),
             TextSpanningConfig::from_pattern(OA_CL100K_BASE_PATTERN),
-        );
+        )
+        .into();
 
-        let inner = vocab.to_decoder_builder().with_parallel(false).init();
+        let inner = vocab.to_decoder_builder().with_parallel(false).build();
         let decoder = ParallelRayonDecoder::new(inner);
 
         common_decoder_unit_test(vocab, &decoder);

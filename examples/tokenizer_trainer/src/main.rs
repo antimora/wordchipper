@@ -1,4 +1,4 @@
-use std::{collections::HashSet, time::Duration};
+use std::{collections::HashSet, sync::Arc, time::Duration};
 
 use arrow::array::{Array, StringArray};
 use clap::Parser;
@@ -9,7 +9,7 @@ use wordchipper::{
     pretrained::openai::OA_O200K_BASE_PATTERN,
     support::slices::{inner_slice_view, inner_str_view},
     training::BinaryPairVocabTrainerOptions,
-    vocab::{ByteMapVocab, io::save_base64_span_map_path},
+    vocab::{ByteMapVocab, SharedVocabSource, io::save_base64_span_map_path},
 };
 use wordchipper_data::dataset::DatasetCacheConfig;
 
@@ -114,7 +114,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let byte_vocab: ByteMapVocab<T> = Default::default();
 
     println!("- train");
-    let vocab: UnifiedTokenVocab<T> = trainer.train(byte_vocab.clone()).expect("training failed");
+    let vocab: Arc<UnifiedTokenVocab<T>> = trainer
+        .train(byte_vocab.clone())
+        .expect("training failed")
+        .into();
 
     let training_duration = std::time::Instant::now().duration_since(t0);
     println!("- training_duration: {:.2?}", training_duration);

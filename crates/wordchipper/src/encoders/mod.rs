@@ -5,10 +5,10 @@
 //! ```rust,no_run
 //! use std::sync::Arc;
 //!
-//! use wordchipper::{TokenEncoder, TokenType, UnifiedTokenVocab};
+//! use wordchipper::{TokenEncoder, TokenType, UnifiedTokenVocab, vocab::SharedVocabSource};
 //!
 //! fn example<T: TokenType>(
-//!     vocab: UnifiedTokenVocab<T>,
+//!     vocab: Arc<UnifiedTokenVocab<T>>,
 //!     batch: &[&str],
 //! ) -> Vec<Vec<T>> {
 //!     let encoder: Arc<dyn TokenEncoder<T>> = vocab.to_default_encoder();

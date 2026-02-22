@@ -27,6 +27,7 @@ use wordchipper::{
         slices::{inner_slice_view, inner_str_view},
         timers::timeit,
     },
+    vocab::SharedVocabSource,
 };
 use wordchipper_data::dataset::{DatasetCache, DatasetCacheConfig};
 use wordchipper_support::WordchipperEngine;
@@ -182,9 +183,10 @@ fn main() -> Result<(), BoxError> {
 
     let mut disk_cache = WordchipperDiskCache::default();
     // println!("Loading wordchipper...");
-    let vocab: UnifiedTokenVocab<Rank> =
+    let vocab: Arc<UnifiedTokenVocab<Rank>> =
         wordchipper::get_model(args.model.to_string().as_str(), &mut disk_cache)?
-            .to_token_type()?;
+            .to_token_type()?
+            .into();
 
     // TODO: complete batch-observer inversion of control for additional tokenizer wrappers.
 

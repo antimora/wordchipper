@@ -31,13 +31,6 @@
 //! Pre-trained vocabulary loaders return [`UnifiedTokenVocab<T>`] instances,
 //! which can be converted between [`TokenType`]s via [`UnifiedTokenVocab::to_token_type`].
 //!
-//! Default [`TokenEncoder`] and [`TokenDecoder`] implementations
-//! can be constructed directly using [`UnifiedTokenVocab::to_default_encoder`]
-//! and [`UnifiedTokenVocab::to_default_decoder`].
-//! [`UnifiedTokenVocab::to_encoder_builder`] and [`UnifiedTokenVocab::to_decoder_builder`]
-//! return [`TokenEncoderBuilder`] and [`TokenDecoderBuilder`] instances,
-//! which can be further configured with additional options.
-//!
 //! ## Loading and Saving Models
 //!
 //! Loading a pre-trained model requires reading in the vocabulary,
@@ -70,6 +63,7 @@
 //!     TokenDecoder,
 //!     TokenEncoder,
 //!     UnifiedTokenVocab,
+//!     vocab::SharedVocabSource,
 //!     disk_cache::WordchipperDiskCache,
 //! };
 //!
@@ -78,7 +72,8 @@
 //!         Arc<dyn TokenDecoder<u32>>
 //! )> {
 //!     let mut disk_cache = WordchipperDiskCache::default();
-//!     let vocab: UnifiedTokenVocab<u32> = get_model("openai/o200k_harmony", &mut disk_cache)?;
+//!     let vocab: Arc<UnifiedTokenVocab<u32>> =
+//!         get_model("openai/o200k_harmony", &mut disk_cache)?.into();
 //!
 //!     let encoder = vocab.to_default_encoder();
 //!     let decoder = vocab.to_default_decoder();

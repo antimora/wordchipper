@@ -78,14 +78,16 @@ mod tests {
     use super::*;
     use crate::{
         TokenType,
+        UnifiedTokenVocab,
         encoders::{
             TokenEncoder,
             testing::{common_encoder_test_vocab, common_encoder_tests},
         },
+        vocab::SharedVocabSource,
     };
 
     fn test_encoder<T: TokenType>() {
-        let vocab = common_encoder_test_vocab::<T>();
+        let vocab: Arc<UnifiedTokenVocab<T>> = common_encoder_test_vocab::<T>().into();
         let inner = vocab.to_encoder_builder().with_parallel(false).build();
         let encoder = ParallelRayonEncoder::new(inner);
 

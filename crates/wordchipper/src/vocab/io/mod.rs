@@ -8,23 +8,20 @@
 //! use wordchipper::{
 //!     TokenDecoder,
 //!     TokenEncoder,
+//!     UnifiedTokenVocab,
 //!     pretrained::openai::OA_O200K_BASE_PATTERN,
 //!     spanning::TextSpanningConfig,
-//!     vocab::{
-//!         SpanMapVocab,
-//!         SpanTokenMap,
-//!         UnifiedTokenVocab,
-//!         io::load_base64_unified_vocab_path,
-//!     },
+//!     vocab::{SharedVocabSource, io::load_base64_unified_vocab_path},
 //! };
 //!
 //! fn example() -> wordchipper::WCResult<(Arc<dyn TokenEncoder<u32>>, Arc<dyn TokenDecoder<u32>>)>
 //! {
-//!     let vocab: UnifiedTokenVocab<u32> = load_base64_unified_vocab_path(
+//!     let vocab: Arc<UnifiedTokenVocab<u32>> = load_base64_unified_vocab_path(
 //!         "vocab.tiktoken",
 //!         TextSpanningConfig::from_pattern(OA_O200K_BASE_PATTERN),
 //!     )
-//!     .expect("failed to load vocab");
+//!     .expect("failed to load vocab")
+//!     .into();
 //!
 //!     let encoder = vocab.to_default_encoder();
 //!     let decoder = vocab.to_default_decoder();
