@@ -6,7 +6,9 @@ use pyo3::{
 };
 use wordchipper::{
     TokenDecoder,
+    TokenDecoderBuilder,
     TokenEncoder,
+    TokenEncoderBuilder,
     UnifiedTokenVocab,
     VocabIndex,
     WCError,
@@ -15,7 +17,7 @@ use wordchipper::{
         slices::{inner_slice_view, inner_str_view},
         strings::string_from_utf8_lossy,
     },
-    vocab::{SharedVocabSource, io::save_base64_span_map_path},
+    vocab::io::save_base64_span_map_path,
 };
 
 fn to_pyerr(err: WCError) -> PyErr {
@@ -40,8 +42,8 @@ impl Tokenizer {
         let vocab: Arc<UnifiedTokenVocab<u32>> = wordchipper::get_model(name, &mut disk_cache)
             .map_err(to_pyerr)?
             .into();
-        let encoder = vocab.to_default_encoder();
-        let decoder = vocab.to_default_decoder();
+        let encoder = TokenEncoderBuilder::default(vocab.clone());
+        let decoder = TokenDecoderBuilder::default(vocab.clone());
 
         Ok(Tokenizer {
             vocab,

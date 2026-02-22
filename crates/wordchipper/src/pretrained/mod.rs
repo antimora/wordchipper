@@ -22,26 +22,22 @@
 //! use std::sync::Arc;
 //!
 //! use wordchipper::{
-//!     TokenDecoder,
-//!     TokenEncoder,
+//!     Tokenizer,
+//!     TokenizerBuilder,
 //!     UnifiedTokenVocab,
 //!     disk_cache::WordchipperDiskCache,
 //!     get_model,
-//!     vocab::SharedVocabSource,
 //! };
 //!
-//! fn example() -> wordchipper::WCResult<(Arc<dyn TokenEncoder<u32>>, Arc<dyn TokenDecoder<u32>>)>
-//! {
+//! fn example() -> wordchipper::WCResult< Arc<dyn Tokenizer<u32>> > {
 //!     let mut disk_cache = WordchipperDiskCache::default();
 //!     let vocab: Arc<UnifiedTokenVocab<u32>> =
 //!         get_model("openai/o200k_harmony", &mut disk_cache)?.into();
 //!
-//!     let encoder: Arc<dyn TokenEncoder<u32>> = vocab.to_default_encoder();
-//!     let decoder: Arc<dyn TokenDecoder<u32>> = vocab.to_default_decoder();
+//!     let tokenizer = TokenizerBuilder::default(vocab);
 //!
-//!     Ok((encoder, decoder))
+//!     Ok(tokenizer)
 //! }
-//! ```
 
 #[cfg(feature = "download")]
 mod load_by_name;

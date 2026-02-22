@@ -19,6 +19,8 @@ use similar::TextDiff;
 use tiktoken_rs::{CoreBPE, Rank};
 use tiktoken_support::TiktokenRsEngine;
 use wordchipper::{
+    TokenDecoderBuilder,
+    TokenEncoderBuilder,
     TokenType,
     UnifiedTokenVocab,
     disk_cache::WordchipperDiskCache,
@@ -27,7 +29,6 @@ use wordchipper::{
         slices::{inner_slice_view, inner_str_view},
         timers::timeit,
     },
-    vocab::SharedVocabSource,
 };
 use wordchipper_data::dataset::{DatasetCache, DatasetCacheConfig};
 use wordchipper_support::WordchipperEngine;
@@ -194,8 +195,8 @@ fn main() -> Result<(), BoxError> {
 
     let wc_engine = Arc::new(WordchipperEngine::<Rank>::new(
         args.model.to_string(),
-        vocab.to_default_encoder(),
-        vocab.to_default_decoder(),
+        TokenEncoderBuilder::default(vocab.clone()),
+        TokenDecoderBuilder::default(vocab.clone()),
     ));
     candidate_engines.push(wc_engine.clone());
 

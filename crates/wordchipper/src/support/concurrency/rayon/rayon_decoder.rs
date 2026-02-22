@@ -83,10 +83,7 @@ mod tests {
         decoders::utility::testing::common_decoder_unit_test,
         pretrained::openai::OA_CL100K_BASE_PATTERN,
         spanning::TextSpanningConfig,
-        vocab::{
-            SharedVocabSource,
-            utility::testing::{build_test_shift_byte_vocab, build_test_vocab},
-        },
+        vocab::utility::testing::{build_test_shift_byte_vocab, build_test_vocab},
     };
 
     #[test]
@@ -99,7 +96,7 @@ mod tests {
         )
         .into();
 
-        let inner = TokenDecoderBuilder::new(vocab.to_vocab().clone())
+        let inner = TokenDecoderBuilder::new((&vocab).clone())
             .with_parallel(false)
             .build();
         let decoder = ParallelRayonDecoder::new(inner);

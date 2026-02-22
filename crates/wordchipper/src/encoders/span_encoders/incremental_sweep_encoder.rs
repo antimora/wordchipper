@@ -66,13 +66,13 @@ mod tests {
             span_encoders::TokenSpanEncoder,
             testing::{common_encoder_test_vocab, common_encoder_tests},
         },
-        vocab::SharedVocabSource,
+        spanning::TextSpannerBuilder,
     };
 
     fn test_encoder<T: TokenType>() {
         let vocab: Arc<UnifiedTokenVocab<T>> = common_encoder_test_vocab().into();
         let encoder = TokenSpanEncoder::<T>::new(
-            vocab.to_default_spanner(),
+            TextSpannerBuilder::default(&vocab),
             vocab.clone(),
             Arc::new(|| Box::new(IncrementalSweepSpanEncoder::<T>::default())),
         );

@@ -34,10 +34,12 @@
 //! use std::sync::Arc;
 //!
 //! use wordchipper::{
+//!     TokenDecoderBuilder,
+//!     TokenEncoderBuilder,
 //!     UnifiedTokenVocab,
 //!     pretrained::openai::OA_CL100K_BASE_PATTERN,
 //!     training::{BinaryPairVocabTrainer, BinaryPairVocabTrainerOptions},
-//!     vocab::{ByteMapVocab, SharedVocabSource, io::save_base64_span_map_path},
+//!     vocab::{ByteMapVocab, io::save_base64_span_map_path},
 //! };
 //!
 //! fn example<I, S>(
@@ -80,8 +82,8 @@
 //!         println!("- tiktoken vocab: {path:?}");
 //!     }
 //!
-//!     let encoder = vocab.to_default_encoder();
-//!     let decoder = vocab.to_default_decoder();
+//!     let encoder = TokenEncoderBuilder::default(vocab.clone());
+//!     let decoder = TokenDecoderBuilder::default(vocab.clone());
 //! }
 //! ```
 

@@ -60,25 +60,18 @@
 //!
 //! use wordchipper::{
 //!     get_model,
-//!     TokenDecoder,
-//!     TokenEncoder,
+//!     Tokenizer,
+//!     TokenizerBuilder,
 //!     UnifiedTokenVocab,
-//!     vocab::SharedVocabSource,
 //!     disk_cache::WordchipperDiskCache,
 //! };
 //!
-//! fn example() -> wordchipper::WCResult<(
-//!         Arc<dyn TokenEncoder<u32>>,
-//!         Arc<dyn TokenDecoder<u32>>
-//! )> {
+//! fn example() -> wordchipper::WCResult<(Arc<Tokenizer<u32>>) {
 //!     let mut disk_cache = WordchipperDiskCache::default();
 //!     let vocab: Arc<UnifiedTokenVocab<u32>> =
 //!         get_model("openai/o200k_harmony", &mut disk_cache)?.into();
 //!
-//!     let encoder = vocab.to_default_encoder();
-//!     let decoder = vocab.to_default_decoder();
-//!
-//!     Ok((encoder, decoder))
+//!     Ok(TokenEncoderBuilder::default(vocab.clone()))
 //! }
 //! ```
 //! 
