@@ -72,7 +72,7 @@
 //!     let vocab: Arc<UnifiedTokenVocab<u32>> =
 //!         get_model("openai/o200k_harmony", &mut disk_cache)?.into();
 //!
-//!     Ok(TokenEncoderBuilder::default(vocab.clone()))
+//!     Ok(TokenizerBuilder::default(vocab.clone()))
 //! }
 //! ```
 //! 
