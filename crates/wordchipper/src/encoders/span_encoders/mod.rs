@@ -1,10 +1,13 @@
 //! # Span Encoders
 
+mod hybrid_span_encoder;
 mod incremental_sweep_encoder;
 mod merge_heap_encoder;
 mod span_encoder;
 mod token_span_encoder;
 
+#[doc(inline)]
+pub use hybrid_span_encoder::*;
 #[doc(inline)]
 pub use incremental_sweep_encoder::*;
 #[doc(inline)]
