@@ -55,7 +55,7 @@ class TestSingleEncode:
         tok = tiktoken.get_encoding(model)
         benchmark.group = f"single/english/{model}"
         benchmark.extra_info["input_bytes"] = _utf8_len(english_text)
-        benchmark(tok.encode_ordinary, english_text)
+        benchmark(tok.encode, english_text, allowed_special="all")
 
     def test_tiktoken_diverse(self, benchmark, model, diverse_text):
         import tiktoken
@@ -63,7 +63,7 @@ class TestSingleEncode:
         tok = tiktoken.get_encoding(model)
         benchmark.group = f"single/diverse/{model}"
         benchmark.extra_info["input_bytes"] = _utf8_len(diverse_text)
-        benchmark(tok.encode_ordinary, diverse_text)
+        benchmark(tok.encode, diverse_text, allowed_special="all")
 
     def test_tokenizers_english(self, benchmark, model, english_text):
         from tokenizers import Tokenizer
@@ -105,7 +105,7 @@ class TestBatchEncode:
         tok = tiktoken.get_encoding(model)
         benchmark.group = f"batch/{model}"
         benchmark.extra_info["input_bytes"] = total_bytes
-        benchmark(tok.encode_ordinary_batch, texts)
+        benchmark(tok.encode_batch, texts, allowed_special="all")
 
     def test_tokenizers(self, benchmark, model, fineweb_batch):
         from tokenizers import Tokenizer

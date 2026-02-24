@@ -48,7 +48,7 @@ class TestSingleDecode:
         import tiktoken
 
         tok = tiktoken.get_encoding(model)
-        tokens = tok.encode_ordinary(english_text)
+        tokens = tok.encode(english_text, allowed_special="all")
         benchmark.group = f"decode/english/{model}"
         benchmark.extra_info["input_bytes"] = _utf8_len(english_text)
         benchmark(tok.decode, tokens)
@@ -57,7 +57,7 @@ class TestSingleDecode:
         import tiktoken
 
         tok = tiktoken.get_encoding(model)
-        tokens = tok.encode_ordinary(diverse_text)
+        tokens = tok.encode(diverse_text, allowed_special="all")
         benchmark.group = f"decode/diverse/{model}"
         benchmark.extra_info["input_bytes"] = _utf8_len(diverse_text)
         benchmark(tok.decode, tokens)

@@ -16,12 +16,12 @@ BATCH_SIZE = 1024
 
 @pytest.fixture(scope="session")
 def english_text():
-    return (DATA_DIR / "english.txt").read_text() * 10
+    return (DATA_DIR / "english.txt").read_text(encoding="utf-8") * 10
 
 
 @pytest.fixture(scope="session")
 def diverse_text():
-    return (DATA_DIR / "multilingual.txt").read_text() * 10
+    return (DATA_DIR / "multilingual.txt").read_text(encoding="utf-8") * 10
 
 
 @pytest.fixture(scope="session")
@@ -33,10 +33,20 @@ def fineweb_batch():
         SHARD_CACHE.parent.mkdir(parents=True, exist_ok=True)
         urllib.request.urlretrieve(SHARD_URL, SHARD_CACHE)
 
-    table = pq.read_table(SHARD_CACHE, columns=["text"])
-    texts = table.column("text").to_pylist()[:BATCH_SIZE]
+    pf = pq.ParquetFile(SHARD_CACHE)
+    texts = []
+    for batch in pf.iter_batches(batch_size=BATCH_SIZE, columns=["text"]):
+        texts = batch.column("text").to_pylist()
+        break
     total_bytes = sum(len(s.encode("utf-8")) for s in texts)
     return texts, total_bytes
+
+
+def pytest_configure(config):
+    if hasattr(config.option, "benchmark_columns"):
+        config.option.benchmark_columns = ["median"]
+        config.option.benchmark_sort = "mean"
+        config.option.benchmark_group_by = "group"
 
 
 def pytest_terminal_summary(terminalreporter, config):
