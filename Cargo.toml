@@ -5,8 +5,8 @@ resolver = "2"
 
 members = [
     "crates/*",
-    "examples/*",
-    "bindings/python",
+    "local_crates/*",
+    "bindings/*",
 ]
 
 [workspace.package]
