@@ -65,11 +65,15 @@ After making changes to `src/lib.rs`, rebuild with `maturin develop` before re-r
 ## Benchmarks
 
 Compares `wordchipper` against `tiktoken` and HuggingFace `tokenizers` for single
-and batch encoding on cl100k_base and o200k_base.
+and batch encoding on cl100k_base and o200k_base. Uses the same corpora and methodology
+as the Rust benchmarks in `wordchipper-bench`:
+
+- **Single-string**: `english.txt` / `multilingual.txt` repeated 10x
+- **Batch**: 1024 samples from fineweb-edu shard 0 (~4.2 MB)
 
 ```bash
 # Install benchmark dependencies
-uv pip install pytest-benchmark tiktoken tokenizers
+uv pip install pytest-benchmark tiktoken tokenizers pyarrow
 
 # Build in release mode for meaningful numbers
 maturin develop --release

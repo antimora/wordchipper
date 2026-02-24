@@ -1,9 +1,17 @@
+import urllib.request
 from pathlib import Path
 
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DATA_DIR = REPO_ROOT / "local_crates" / "wordchipper-bench" / "benches" / "data"
+
+SHARD_URL = (
+    "https://huggingface.co/datasets/karpathy/"
+    "fineweb-edu-100b-shuffle/resolve/main/shard_00000.parquet"
+)
+SHARD_CACHE = Path("~/.cache/brn-nanochat/dataset/shard_00000.parquet").expanduser()
+BATCH_SIZE = 1024
 
 
 @pytest.fixture(scope="session")
@@ -17,15 +25,18 @@ def diverse_text():
 
 
 @pytest.fixture(scope="session")
-def english_lines():
-    text = (DATA_DIR / "english.txt").read_text()
-    return [line for line in text.splitlines() if line.strip()]
+def fineweb_batch():
+    """Load 1024 text samples from fineweb-edu shard 0, matching the Rust bench."""
+    import pyarrow.parquet as pq
 
+    if not SHARD_CACHE.exists():
+        SHARD_CACHE.parent.mkdir(parents=True, exist_ok=True)
+        urllib.request.urlretrieve(SHARD_URL, SHARD_CACHE)
 
-@pytest.fixture(scope="session")
-def diverse_lines():
-    text = (DATA_DIR / "multilingual.txt").read_text()
-    return [line for line in text.splitlines() if line.strip()]
+    table = pq.read_table(SHARD_CACHE, columns=["text"])
+    texts = table.column("text").to_pylist()[:BATCH_SIZE]
+    total_bytes = sum(len(s.encode("utf-8")) for s in texts)
+    return texts, total_bytes
 
 
 def pytest_terminal_summary(terminalreporter, config):
@@ -41,13 +52,13 @@ def pytest_terminal_summary(terminalreporter, config):
         input_bytes = bench.extra_info.get("input_bytes")
         if not input_bytes or not bench.stats:
             continue
-        mb_s = input_bytes / bench.stats.mean / 1_000_000
+        mb_s = input_bytes / bench.stats.median / 1_000_000
         rows.append((bench.group or "", bench.name, mb_s))
 
     if not rows:
         return
 
-    terminalreporter.section("throughput", sep="-")
+    terminalreporter.section("throughput (median MB/s)", sep="-")
     current_group = None
     for group, name, mb_s in sorted(rows):
         if group != current_group:
