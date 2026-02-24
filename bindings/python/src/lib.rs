@@ -50,40 +50,53 @@ impl Tokenizer {
 
     fn encode(
         &self,
-        text: &str,
+        py: Python<'_>,
+        text: String,
     ) -> PyResult<Vec<u32>> {
-        self.inner.try_encode(text).map_err(to_pyerr)
+        let inner = self.inner.clone();
+        py.detach(move || inner.try_encode(&text)).map_err(to_pyerr)
     }
 
     fn encode_batch(
         &self,
+        py: Python<'_>,
         texts: Vec<String>,
     ) -> PyResult<Vec<Vec<u32>>> {
-        let refs = inner_str_view(&texts);
-        self.inner.try_encode_batch(&refs).map_err(to_pyerr)
+        let inner = self.inner.clone();
+        py.detach(move || {
+            let refs = inner_str_view(&texts);
+            inner.try_encode_batch(&refs)
+        })
+        .map_err(to_pyerr)
     }
 
     fn decode(
         &self,
+        py: Python<'_>,
         tokens: Vec<u32>,
     ) -> PyResult<String> {
-        self.inner
-            .try_decode_to_string(&tokens)
-            .map_err(to_pyerr)?
-            .try_result()
-            .map_err(to_pyerr)
+        let inner = self.inner.clone();
+        py.detach(move || {
+            inner
+                .try_decode_to_string(&tokens)
+                .and_then(|r| r.try_result())
+        })
+        .map_err(to_pyerr)
     }
 
     fn decode_batch(
         &self,
+        py: Python<'_>,
         batch: Vec<Vec<u32>>,
     ) -> PyResult<Vec<String>> {
-        let refs = inner_slice_view(&batch);
-        self.inner
-            .try_decode_batch_to_strings(&refs)
-            .map_err(to_pyerr)?
-            .try_results()
-            .map_err(to_pyerr)
+        let inner = self.inner.clone();
+        py.detach(move || {
+            let refs = inner_slice_view(&batch);
+            inner
+                .try_decode_batch_to_strings(&refs)
+                .and_then(|r| r.try_results())
+        })
+        .map_err(to_pyerr)
     }
 
     #[getter]
