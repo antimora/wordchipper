@@ -249,7 +249,8 @@ preceding whitespace becomes its own span.
 ## Testing your lexer
 
 The strongest correctness guarantee is an **oracle test**: run the same input through both a
-regex-based spanner and your logos lexer, and assert the spans are identical. With proptest, you can
+regex-based spanner and your logos lexer, and assert the spans are identical. With
+[proptest](https://proptest-rs.github.io/proptest/intro.html), you can
 do this over thousands of random Unicode strings:
 
 ```rust
