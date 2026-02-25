@@ -56,9 +56,9 @@ impl Tokenizer {
     fn encode(
         &self,
         py: Python<'_>,
-        text: String,
+        text: &str,
     ) -> PyResult<Vec<u32>> {
-        py.detach(|| self.inner.try_encode(&text)).map_err(to_pyerr)
+        py.detach(|| self.inner.try_encode(text)).map_err(to_pyerr)
     }
 
     fn encode_batch(
