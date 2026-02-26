@@ -6,6 +6,18 @@ Requires [mdbook](https://rust-lang.github.io/mdBook/guide/installation.html):
 cargo install mdbook
 ```
 
+## WASM interactive demo
+
+The book includes an interactive tokenizer demo that runs in the browser via WebAssembly.
+Before building or serving the book, run the setup script to build the WASM module and
+download vocab files:
+
+```bash
+./setup-wasm.sh
+```
+
+This creates `src/wasm/` (gitignored) with the WASM binary and vocab data.
+
 ## Serve locally (with live reload)
 
 ```bash
