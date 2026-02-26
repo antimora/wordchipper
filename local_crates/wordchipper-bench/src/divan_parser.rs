@@ -328,7 +328,7 @@ fn branch_info(first_col: &str) -> Option<(usize, &str)> {
     let depth = char_idx / 3 + 1;
 
     let name = first_col[byte_idx..]
-        .trim_start_matches(|c: char| matches!(c, '\u{251c}' | '\u{2570}' | '\u{2500}' | ' '))
+        .trim_start_matches(['\u{251c}', '\u{2570}', '\u{2500}', ' '])
         .split_whitespace()
         .next()?;
 
