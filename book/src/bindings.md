@@ -157,6 +157,7 @@ Working examples are included in the repository:
 
 - **Node.js:** `examples/wasm-node/` - Encode/decode from a Node.js script
 - **Browser:** `examples/wasm-browser/` - In-browser tokenization with a simple HTML page
+- **Live demo:** [Interactive Tokenizer Demo](./interactive-tokenizer.md) - Try it directly in this book
 
 ## API comparison
 

@@ -97,3 +97,5 @@ effectively. It's structured in layers:
 - **If you're building something custom**, see
   [Building Custom Logos Lexers](./custom-logos-lexers.md) and
   [Advanced: Span Encoders](./advanced-span-encoders.md).
+- **If you want to try it now**, the
+  [Interactive Tokenizer Demo](./interactive-tokenizer.md) runs in your browser via WASM.

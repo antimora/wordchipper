@@ -1,7 +1,8 @@
 # How Tokenizers Work
 
 This chapter explains the algorithms behind BPE tokenization. If you already know how BPE works,
-skip to [Pretrained Models](./pretrained-models.md).
+skip to [Pretrained Models](./pretrained-models.md). To see tokenization in action, try the
+[Interactive Tokenizer Demo](./interactive-tokenizer.md).
 
 ## The problem: turning text into numbers
 
