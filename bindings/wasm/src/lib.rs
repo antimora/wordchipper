@@ -40,8 +40,7 @@ fn parse_tiktoken_data(data: &[u8]) -> Result<SpanTokenMap<u32>, JsError> {
             .map_err(|e| JsError::new(&format!("base64 decode error: {e}")))?;
         let id_str = core::str::from_utf8(&line[sep + 1..])
             .map_err(|e| JsError::new(&format!("invalid utf8 in token id: {e}")))?;
-        // Trim trailing \r for Windows line endings
-        let id_str = id_str.trim_ascii();
+        let id_str = id_str.trim_ascii_end();
         let id: u32 = id_str
             .parse()
             .map_err(|e| JsError::new(&format!("invalid token id '{id_str}': {e}")))?;
