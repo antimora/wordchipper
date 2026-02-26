@@ -4,20 +4,18 @@
 
 extern crate alloc;
 
-use alloc::{
-    format,
-    string::String,
-    sync::Arc,
-    vec::Vec,
-};
+use alloc::{format, string::String, sync::Arc, vec::Vec};
 
 use base64::{Engine, prelude::BASE64_STANDARD};
 use js_sys::{Array, JsString, Uint32Array};
 use wasm_bindgen::prelude::*;
 use wordchipper::{
-    TokenDecoder, TokenEncoder,
+    TokenDecoder,
+    TokenEncoder,
     Tokenizer as WCTokenizer,
-    TokenizerOptions, UnifiedTokenVocab, VocabIndex,
+    TokenizerOptions,
+    UnifiedTokenVocab,
+    VocabIndex,
     pretrained::openai::OATokenizer,
     support::{
         slices::{inner_slice_view, inner_str_view},
@@ -33,7 +31,9 @@ fn parse_tiktoken_data(data: &[u8]) -> Result<SpanTokenMap<u32>, JsError> {
         if line.is_empty() {
             continue;
         }
-        let sep = line.iter().position(|&b| b == b' ')
+        let sep = line
+            .iter()
+            .position(|&b| b == b' ')
             .ok_or_else(|| JsError::new("invalid tiktoken line: no space separator"))?;
         let span = BASE64_STANDARD
             .decode(&line[..sep])
@@ -50,7 +50,7 @@ fn parse_tiktoken_data(data: &[u8]) -> Result<SpanTokenMap<u32>, JsError> {
     Ok(map)
 }
 
-/// Resolve a model name string to an OATokenizer variant.
+/// Resolve a model name string to an `OATokenizer` variant.
 fn resolve_model(name: &str) -> Result<OATokenizer, JsError> {
     match name {
         "r50k_base" => Ok(OATokenizer::R50kBase),
@@ -78,29 +78,36 @@ impl Tokenizer {
     /// The model name determines the regex pattern and special tokens.
     /// The data should be the raw bytes of a `.tiktoken` file.
     #[wasm_bindgen(js_name = "fromVocabData")]
-    pub fn from_vocab_data(model: &str, data: &[u8]) -> Result<Tokenizer, JsError> {
+    pub fn from_vocab_data(
+        model: &str,
+        data: &[u8],
+    ) -> Result<Tokenizer, JsError> {
         let oa = resolve_model(model)?;
         let span_map = parse_tiktoken_data(data)?;
         let spanning = oa.spanning_config::<u32>();
-        let vocab = UnifiedTokenVocab::from_span_vocab(
-            spanning,
-            SpanMapVocab::from_span_map(span_map),
-        )
-        .map_err(|e| JsError::new(&format!("failed to build vocab: {e}")))?;
+        let vocab =
+            UnifiedTokenVocab::from_span_vocab(spanning, SpanMapVocab::from_span_map(span_map))
+                .map_err(|e| JsError::new(&format!("failed to build vocab: {e}")))?;
 
         let inner = TokenizerOptions::default().build(Arc::new(vocab));
         Ok(Tokenizer { inner })
     }
 
     /// Encode a string into token IDs.
-    pub fn encode(&self, text: &str) -> Result<Vec<u32>, JsError> {
+    pub fn encode(
+        &self,
+        text: &str,
+    ) -> Result<Vec<u32>, JsError> {
         self.inner
             .try_encode(text)
             .map_err(|e| JsError::new(&format!("encode error: {e}")))
     }
 
     /// Decode token IDs back into a string.
-    pub fn decode(&self, tokens: &[u32]) -> Result<String, JsError> {
+    pub fn decode(
+        &self,
+        tokens: &[u32],
+    ) -> Result<String, JsError> {
         self.inner
             .try_decode_to_string(tokens)
             .and_then(|r| r.try_result())
@@ -109,7 +116,10 @@ impl Tokenizer {
 
     /// Encode multiple strings into arrays of token IDs.
     #[wasm_bindgen(js_name = "encodeBatch")]
-    pub fn encode_batch(&self, texts: Vec<JsString>) -> Result<Array, JsError> {
+    pub fn encode_batch(
+        &self,
+        texts: Vec<JsString>,
+    ) -> Result<Array, JsError> {
         let strings: Vec<String> = texts.iter().map(|s| s.into()).collect();
         let refs = inner_str_view(&strings);
         let results = self
@@ -127,7 +137,10 @@ impl Tokenizer {
 
     /// Decode multiple arrays of token IDs back into strings.
     #[wasm_bindgen(js_name = "decodeBatch")]
-    pub fn decode_batch(&self, batch: Vec<Uint32Array>) -> Result<Array, JsError> {
+    pub fn decode_batch(
+        &self,
+        batch: Vec<Uint32Array>,
+    ) -> Result<Array, JsError> {
         let vecs: Vec<Vec<u32>> = batch.iter().map(|arr| arr.to_vec()).collect();
         let refs = inner_slice_view(&vecs);
         let results = self
@@ -159,7 +172,10 @@ impl Tokenizer {
 
     /// Look up the token ID for a given token string. Returns null if not found.
     #[wasm_bindgen(js_name = "tokenToId")]
-    pub fn token_to_id(&self, token: &str) -> JsValue {
+    pub fn token_to_id(
+        &self,
+        token: &str,
+    ) -> JsValue {
         match self.inner.vocab().lookup_token(token.as_bytes()) {
             Some(id) => JsValue::from(id),
             None => JsValue::NULL,
@@ -168,7 +184,10 @@ impl Tokenizer {
 
     /// Look up the token string for a given token ID. Returns null if not found.
     #[wasm_bindgen(js_name = "idToToken")]
-    pub fn id_to_token(&self, id: u32) -> JsValue {
+    pub fn id_to_token(
+        &self,
+        id: u32,
+    ) -> JsValue {
         match self.inner.vocab().unified_dictionary().get(&id) {
             Some(bytes) => JsValue::from_str(&string_from_utf8_lossy(bytes.clone())),
             None => JsValue::NULL,
