@@ -92,6 +92,8 @@ effectively. It's structured in layers:
   visual, step-by-step explanation of BPE.
 - **If you just want to encode text**, skip to [Getting Started](./getting-started.md) for a working
   example in five lines.
+- **If you want to train your own tokenizer**, read
+  [Training Your Own Tokenizer](./training.md) for the CLI quick-start and Rust API deep dive.
 - **If you're optimizing throughput**, read [Performance](./performance.md) to understand the
   available BPE algorithms and DFA acceleration.
 - **If you're building something custom**, see
