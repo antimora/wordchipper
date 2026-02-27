@@ -1,7 +1,0 @@
-[book]
-title = "Wordchipper: High-Performance Tokenization in Rust"
-authors = ["Crutcher Dunnavant"]
-src = "book/src"
-
-[build]
-build-dir = "book/book"
