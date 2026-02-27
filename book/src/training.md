@@ -24,14 +24,14 @@ The short version: train your own when the pretrained vocabulary doesn't fit you
 
 ## Quick start: the CLI
 
-The fastest way to train a tokenizer is with `wordchipper-cli`. No Rust code needed.
+The fastest way to train a tokenizer is with `wchipper`. No Rust code needed.
 
 ### Training on text files
 
 Create a text file with your training data (one document per line, or free-form text):
 
 ```bash
-cargo run --release -p wordchipper-cli -- \
+cargo run --release -p wchipper -- \
     train \
     --vocab-size=8000 \
     --output=my_tokenizer.tiktoken \
@@ -47,7 +47,7 @@ base64-encoded tiktoken format.
 For larger datasets, Parquet is more efficient. The file must have a column named `"text"`:
 
 ```bash
-cargo run --release -p wordchipper-cli -- \
+cargo run --release -p wchipper -- \
     train \
     --input-format=parquet \
     --vocab-size=50281 \
