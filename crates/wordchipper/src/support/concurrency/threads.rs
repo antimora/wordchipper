@@ -28,7 +28,7 @@ const RAYON_VARS: &[&str] = &["RAYON_NUM_THREADS", "RAYON_RS_NUM_CPUS"];
 
 /// Get the max parallelism available.
 ///
-/// When `rayon` is enabled, will scan over `RAYON_VARS`.
+/// When `parallel` is enabled, will scan over `RAYON_VARS`.
 pub fn est_max_parallelism() -> usize {
     let default = || {
         thread::available_parallelism()

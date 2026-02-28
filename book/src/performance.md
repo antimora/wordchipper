@@ -134,7 +134,7 @@ default) swaps in foldhash for faster hashing:
 | (none)      | default       | SipHash (std) or hashbrown default     |
 
 Unlike previous versions, `fast-hash` works in `no_std` environments. See
-[Feature Flags](./feature-flags.md) for the full hash map selection matrix.
+[Feature Flags](./feature-flags.md) for details.
 
 ## End-to-end benchmarks
 

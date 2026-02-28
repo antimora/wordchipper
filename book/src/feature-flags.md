@@ -46,7 +46,7 @@ pool without pulling in rayon.
 
 #### features = ["client"]
 
-*Implies `download` and `datagym`.*
+*Implies `download` and `datagym` (both of which imply `std`).*
 
 Everything needed to load pretrained vocabularies: downloading from the network and parsing
 DataGym-format files.

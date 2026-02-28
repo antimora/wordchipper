@@ -23,7 +23,7 @@ These features are behind feature flags that imply `std`:
 | `download`   | Network I/O, file system caching |
 | `datagym`    | JSON parsing, file I/O           |
 | `concurrent` | Thread pool, OS threads          |
-| `parallel`   | Rayon (implies `concurrent`)     |
+| `parallel`   | Rayon requires OS threads         |
 | Regex-based spanning | `regex` and `fancy-regex` crates |
 
 Note that `fast-hash` does *not* require `std`. See [Feature Flags](./feature-flags.md) for the

@@ -18,7 +18,9 @@ use crate::{
 
 /// Policy enum for selecting a [`SpanEncoder`] for
 /// [`TokenSpanEncoder`](`crate::encoders::token_span_encoder::TokenSpanEncoder`).
-#[derive(Default, Debug, Clone, Copy, PartialEq, strum::EnumString, strum::EnumIter, strum::Display)]
+#[derive(
+    Default, Debug, Clone, Copy, PartialEq, strum::EnumString, strum::EnumIter, strum::Display,
+)]
 #[non_exhaustive]
 pub enum SpanEncoderSelector {
     /// This is the canonical best concurrent encoder.
